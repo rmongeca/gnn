@@ -1,6 +1,12 @@
 # Custom project folders to ignore
 data
 reference
+logs
+
+# Custom IDE/editor ignores
+.vscode
+.idea
+.devcontainers
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
