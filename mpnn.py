@@ -1,6 +1,13 @@
 """Message Passing Neural Network implementation"""
+import logging
+import os
 import tensorflow as tf
+from datetime import datetime
 from typing import Dict, Tuple, NamedTuple
+
+log_name = os.path.join("logs", f"{datetime.utcnow().strftime('%Y%m%dT%H')}.log")
+logging.basicConfig(filename=log_name, level=logging.DEBUG)
+log = logging.getLogger(__name__)
 
 
 class GraphInput(NamedTuple):
@@ -182,6 +189,21 @@ class MessagePassingNet(tf.keras.Model):
         y = self.ro(hidden, hidden0)
         return y
 
+    def fit(self, data_generator, n_epochs=1):
+        log.info("Fit started...")
+        total_metrics = []
+        for n in range(n_epochs):
+            log.info(f"Epoch {n} started.")
+            epoch_metrics = []
+            for sample in data_generator:
+                metric = self.train_step(sample)
+                epoch_metrics.append(metric)
+                log.debug(epoch_metrics)
+            log.info(f"Epoch {n} finished -> {epoch_metrics}")
+            total_metrics.extend(epoch_metrics)
+        log.info("Fit finished.")
+        return total_metrics
+
     def train_step(self, data):
         # Unpack the data. Its structure depends on your model and
         # on what you pass to `fit()`.
@@ -203,3 +225,12 @@ class MessagePassingNet(tf.keras.Model):
         # Return a dict mapping metric names to current value
         return {m.name: m.result() for m in self.metrics}
 
+    def evaluate(self, data_generator):
+        metric = tf.keras.metrics.MeanAbsolutePercentageError()
+        log.info("Evaluate started.")
+        for graph, y in data_generator:
+            y_pred = self(graph, training=False)
+            metric.update_state(y, y_pred)
+        result = metric.result()
+        log.info(f"Evaluate finished -> {result}.")
+        return result
