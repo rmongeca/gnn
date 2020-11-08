@@ -12,18 +12,20 @@ log = logging.getLogger(__name__)
 
 class GraphInput(NamedTuple):
     """Input named tuple for the MessagePassingNet."""
-
     node_features: tf.Tensor
     edge_features: tf.Tensor
-    adjacency_lists: Tuple[tf.Tensor, ...]
-    edge_to_idx: Dict
+    edge_sources: tf.Tensor
+    edge_targets: tf.Tensor
 
-
-class GraphInputShapes(NamedTuple):
-    """Input Shape named tuple for the MessagePassingNet."""
-
-    node_features: tf.TensorShape
-    edge_features: tf.TensorShape
+    def summary(self):
+        summary = f"""GraphInput data:
+        - Node_features {self.node_features.shape}
+        - Edge_features {self.edge_features.shape}
+        - Edge_sources {self.edge_sources.shape}
+        - Edge_targets {self.edge_targets.shape}
+        """
+        print(summary)
+        return summary
 
 
 class MessageLayer(tf.keras.layers.Layer):
@@ -41,28 +43,23 @@ class MessageLayer(tf.keras.layers.Layer):
         num_nodes = inputs.node_features.shape[0]
         return tf.map_fn(
             fn=lambda x: self._call(x, inputs, hidden, training=training),
-            elems=tf.range(num_nodes, dtype=float))
+            elems=tf.range(num_nodes),
+            fn_output_signature=float)
 
     def _call(self, node_idx, inputs: GraphInput, hidden: tf.Tensor, training=None):
-        node_idx = int(node_idx)
-        edge_to_idx = inputs.edge_to_idx
-        adjacency_list = inputs.adjacency_lists[node_idx]
-        edges = tf.gather(params=inputs.edge_features,
-                          indices=self._get_edge_idx(node_idx, adjacency_list, edge_to_idx))
+        mask = inputs.edge_targets == node_idx
+        adjacency_list = inputs.edge_sources[mask]
+        edge_list = tf.reshape(tf.where(mask), (adjacency_list.shape[0]))
         neighbours = tf.gather(params=hidden, indices=adjacency_list)
-        return self.aggregation(self._mp(neighbours, edges, training=training))
+        edges = tf.gather(params=inputs.edge_features, indices=edge_list)
+        messages = self._mp(neighbours, edges, training=training)
+        return self.aggregation(messages)
 
     def call_edge(self, edge: tf.Tensor, neighbour: tf.Tensor):
         _edge = tf.reshape(edge, (1, edge.shape[0]))
         _neighbour = tf.reshape(neighbour, (self.hidden_state_size,))
         edge_mat = tf.reshape(self.edge_net(_edge), (self.message_size, self.hidden_state_size))
         return tf.linalg.matvec(edge_mat, _neighbour)
-
-    def _get_edge_idx(self, node_idx, adjacency_list: tf.Tensor, edge_to_idx: Dict):
-        return tf.map_fn(
-            fn=lambda i: edge_to_idx["{}-{}".format(*sorted([node_idx, int(i)]))],
-            elems=adjacency_list
-        )
 
     def _mp(self, neighbours: tf.Tensor, edges: tf.Tensor, training=None) -> tf.Tensor:
         num_edges = edges.shape[0]
@@ -82,10 +79,6 @@ class UpdateLayer(tf.keras.layers.Layer):
         self.message_size = message_size
         self.up = tf.keras.layers.GRU(units=self.hidden_state_size)
 
-    def build(self, input_shapes: GraphInputShapes):
-        input_shape = self.hidden_state_size + self.message_size
-        self.up.build(input_shape=(1, input_shape))
-
     def call(self, messages, hidden, initial, training=None):
         _inputs = tf.concat([hidden, messages], axis=1)
         up_inputs = tf.reshape(_inputs, (_inputs.shape[0], _inputs.shape[1], 1))
@@ -100,10 +93,6 @@ class ReadoutLayer(tf.keras.layers.Layer):
         self.hidden_state_size = hidden_state_size
         self._i = tf.keras.layers.Dense(units=outputs)
         self._j = tf.keras.layers.Dense(units=outputs)
-
-    def build(self, input_shapes: GraphInputShapes):
-        self._i.build(input_shape=self.hidden_state_size*2)
-        self._j.build(input_shape=self.hidden_state_size)
 
     def call(self, hidden: tf.Tensor, hidden0: tf.Tensor, training=None):
         inputs = tf.concat([hidden, hidden0], axis=1)
@@ -120,10 +109,6 @@ class Initial(tf.keras.layers.Layer):
         super(Initial, self).__init__()
         self.hidden_state_size = hidden_state_size
         self.init = tf.keras.layers.Dense(units=self.hidden_state_size)
-
-    def build(self, input_shapes: GraphInputShapes):
-        node_features = input_shapes.node_features[1]
-        self.init.build(input_shape=node_features)
 
     def call(self, inputs: GraphInput, training=None):
         node_features = inputs.node_features
@@ -174,12 +159,6 @@ class MessagePassingNet(tf.keras.Model):
                                     message_size=self.message_size)
         self.ro = self.readout_layer(hidden_state_size=self.hidden_state_size)
 
-    def build(self, input_shapes: GraphInputShapes):
-        self.init.build(input_shapes)
-        # self.mp.build(input_shapes)
-        self.up.build(input_shapes)
-        self.ro.build(input_shapes)
-
     def call(self, inputs: GraphInput, training=None, mask=None) -> tf.Tensor:
         hidden = self.init(inputs)
         hidden0 = tf.identity(hidden)
@@ -189,10 +168,10 @@ class MessagePassingNet(tf.keras.Model):
         y = self.ro(hidden, hidden0)
         return y
 
-    def fit(self, data_generator, n_epochs=1):
+    def fit(self, data_generator, epochs=1):
         log.info("Fit started...")
         total_metrics = []
-        for n in range(n_epochs):
+        for n in range(epochs):
             log.info(f"Epoch {n} started.")
             epoch_metrics = []
             for sample in data_generator:
@@ -207,7 +186,8 @@ class MessagePassingNet(tf.keras.Model):
     def train_step(self, data):
         # Unpack the data. Its structure depends on your model and
         # on what you pass to `fit()`.
-        graph, y = data
+        _graph, y = data
+        graph = GraphInput(*_graph)
 
         with tf.GradientTape() as tape:
             y_pred = self(graph, training=True)  # Forward pass
@@ -226,11 +206,12 @@ class MessagePassingNet(tf.keras.Model):
         return {m.name: m.result() for m in self.metrics}
 
     def evaluate(self, data_generator):
-        metric = tf.keras.metrics.MeanAbsolutePercentageError()
+        self.compiled_metrics.reset_states()
         log.info("Evaluate started.")
-        for graph, y in data_generator:
+        for _graph, y in data_generator:
+            graph = GraphInput(*_graph)
             y_pred = self(graph, training=False)
-            metric.update_state(y, y_pred)
-        result = metric.result()
+            self.compiled_metrics.update_state(y, y_pred)
+        result = {m.name: m.result() for m in self.metrics}
         log.info(f"Evaluate finished -> {result}.")
         return result
