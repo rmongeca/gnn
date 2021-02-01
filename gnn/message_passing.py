@@ -8,8 +8,10 @@ from gnn.input import MessagePassingInput, MessageFunctionInput
 class MessagePassingLayer(tf.keras.layers.Layer, ABC):
     """Abstract Message Passing layer for GNN model.
 
-    In order to use this abstract class, the user has to define the aggregation and message
-    methods.
+    Abstract class to define handling of Batched MessagePassingInput for message passing layers.
+    Child classes must implement the message method, which takes as argument a non-batched
+    MessagePassingInput and generates messages, and the aggregate method, which takes non-batched
+    messages tensor and returns the aggregated messages.
     """
 
     def __init__(self, hidden_state_size=10, message_size=100, *args, **kwargs):

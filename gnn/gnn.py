@@ -3,7 +3,7 @@ import tensorflow as tf
 
 from gnn.initial import DenseInitializer
 from gnn.input import GNNInput, MessagePassingInput, ReadoutInput, UpdateInput
-from gnn.message_passing import EdgeNetMessagePassing
+from gnn.message_passing import EdgeNetMessagePassing, ConcatenationMessage
 from gnn.readout import GatedReadout
 from gnn.update import GRUUpdate
 
@@ -29,8 +29,8 @@ class GNN(tf.keras.Model):
         Readout layer for GNN.
     """
 
-    def __init__(self, hidden_state_size=10, message_size=20, message_passing_iterations=3,
-                 output_size=1, initializer=DenseInitializer, message_passing=EdgeNetMessagePassing,
+    def __init__(self, hidden_state_size=10, message_size=10, message_passing_iterations=3,
+                 output_size=1, initializer=DenseInitializer, message_passing=ConcatenationMessage,
                  update=GRUUpdate, readout=GatedReadout, *args, **kwargs):
         super(GNN, self).__init__(*args, **kwargs)
         # Record arguments

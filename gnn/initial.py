@@ -11,12 +11,7 @@ class DenseInitializer(tf.keras.layers.Layer):
         # Init inner layers
         self.init = tf.keras.layers.Dense(units=hidden_state_size, name="initializer-dense")
 
-    def build(self, input_shape):
-        self.init.build(input_shape)
-        super(DenseInitializer, self).build([])
-
     def call(self, node_features, training=None):
-        # Flatten batch-nodes
         batch_size = tf.shape(node_features)[0]
         num_nodes = tf.shape(node_features)[1]
         num_dims = tf.shape(node_features)[2]

@@ -1,10 +1,39 @@
 """Readout Layer for GNN implementation."""
 import tensorflow as tf
+from abc import ABC, abstractmethod
 
 from gnn.input import ReadoutInput
 
 
-class GatedReadout(tf.keras.layers.Layer):
+class ReadoutLayer(tf.keras.layers.Layer, ABC):
+    """Base Readout Layer abstract class to be inherited by Readout Layer implementations.
+
+    Abstract class to define handling of Batched ReadoutInput for readout layer to perform Readout.
+    Child classes must implement the readout method, which takes as argument a non-batched
+    ReadoutInput.
+    """
+
+    def call(self, inputs: ReadoutInput, training=None):
+        batch_size = tf.shape(inputs.hidden)[0]
+        return tf.map_fn(
+            fn=lambda batch: self._handle_batch(batch, inputs, training=training),
+            elems=tf.range(batch_size),
+            fn_output_signature=tf.TensorSpec([self.output_size], float)
+        )
+
+    def _handle_batch(self, batch, inputs: ReadoutInput, training=None):
+        batch_inputs = ReadoutInput(
+            hidden=inputs.hidden[batch, :, :],
+            hidden_initial=inputs.hidden_initial[batch, :, :],
+        )
+        return self.readout(batch_inputs, training=training)
+
+    @abstractmethod
+    def readout(self, inputs: ReadoutInput, training=None):
+        pass
+
+
+class GatedReadout(ReadoutLayer):
     """Readout function layer with Gated NN for GNN model."""
 
     def __init__(self, hidden_state_size=10, output_size=1,
@@ -17,19 +46,9 @@ class GatedReadout(tf.keras.layers.Layer):
         self.gate = tf.keras.layers.Dense(units=output_size, name="readout-gate-hidden-initial")
         self.state = tf.keras.layers.Dense(units=output_size, name="readout-state-hidden")
 
-    def call(self, inputs: ReadoutInput, training=None):
-        # Get input info
-        batch_size = tf.shape(inputs.hidden)[0]
-        # Handle batches independently
-        return tf.map_fn(
-            fn=lambda batch: self._handle_batch(batch, inputs, training=training),
-            elems=tf.range(batch_size),
-            fn_output_signature=tf.TensorSpec([self.output_size], float)
-        )
-
-    def _handle_batch(self, batch, inputs: ReadoutInput, training=None):
-        hidden = inputs.hidden[batch, :, :]
-        hidden_initial = inputs.hidden_initial[batch, :, :]
+    def readout(self, inputs: ReadoutInput, training=None):
+        hidden = inputs.hidden
+        hidden_initial = inputs.hidden_initial
         hidden_concat = tf.concat([hidden, hidden_initial], axis=-1)
         gate = self.gate_activation(self.gate(hidden_concat, training=training))
         state = self.state(hidden, training=training)
