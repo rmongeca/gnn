@@ -13,10 +13,10 @@ tf.keras.backend.clear_session()
 
 np.random.seed(42)
 
-training_dir = "/home/rmonge/UPC/TFM/gnn-qm9/data/training"
+training_dir = "/home/rmonge/UPC/TFM/gnn/data/training"
 training_fn = [os.path.join(training_dir, fn) for fn in os.listdir(training_dir)
                if not fn.startswith(".")]
-test_dir = "/home/rmonge/UPC/TFM/gnn-qm9/data/test"
+test_dir = "/home/rmonge/UPC/TFM/gnn/data/test"
 test_fn = [os.path.join(test_dir, fn) for fn in os.listdir(test_dir) if not fn.startswith(".")]
 target = "dipole_moment"
 
@@ -27,8 +27,6 @@ training = tf.data.Dataset.from_generator(
     **GNNInput.get_data_generator(training_fn, target))
 test = tf.data.Dataset.from_generator(
     **GNNInput.get_data_generator(test_fn, target))
-
-graph, y = next(training.take(1).as_numpy_iterator())
 
 model = GNN(hidden_state_size=15, message_size=20, message_passing_iterations=3, output_size=1)
 
@@ -51,8 +49,8 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir)
 
 start = time()
 loss = model.fit(
-    training, epochs=10, steps_per_epoch=1000,
-    validation_data=test, validation_freq=1, validation_steps=1000,
+    training.batch(1), epochs=10, steps_per_epoch=1000,
+    validation_data=test.batch(1), validation_freq=1, validation_steps=1000,
     callbacks=[tensorboard_callback], use_multiprocessing=True)
 elapsed = time() - start
 print(f"Fit ended after {elapsed} seconds")
