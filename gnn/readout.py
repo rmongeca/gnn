@@ -2,7 +2,7 @@
 import tensorflow as tf
 from abc import ABC, abstractmethod
 
-from gnn.input import ReadoutInput
+from .input import ReadoutInput
 
 
 class ReadoutLayer(tf.keras.layers.Layer, ABC):
@@ -46,10 +46,17 @@ class GatedReadout(ReadoutLayer):
         self.gate = tf.keras.layers.Dense(units=output_size, name="readout-gate-hidden-initial")
         self.state = tf.keras.layers.Dense(units=output_size, name="readout-state-hidden")
 
+    def build(self, input_shapes):
+        gate_shape = tf.TensorShape([None, None, input_shapes.hidden[2]*2])
+        self.gate.build(gate_shape)
+        self.state.build(input_shapes.hidden)
+        super(ReadoutLayer, self).build([])
+
     def readout(self, inputs: ReadoutInput, training=None):
         hidden = inputs.hidden
         hidden_initial = inputs.hidden_initial
         hidden_concat = tf.concat([hidden, hidden_initial], axis=-1)
-        gate = self.gate_activation(self.gate(hidden_concat, training=training))
+        gate_in = self.gate(hidden_concat, training=training)
+        gate = self.gate_activation(gate_in)
         state = self.state(hidden, training=training)
         return tf.math.reduce_sum(tf.math.multiply(gate, state), axis=0)

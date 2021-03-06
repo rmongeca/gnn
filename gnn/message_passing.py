@@ -2,7 +2,7 @@
 import tensorflow as tf
 from abc import ABC, abstractmethod
 
-from gnn.input import MessagePassingInput, MessageFunctionInput
+from .input import MessagePassingInput, MessageFunctionInput
 
 
 class MessagePassingLayer(tf.keras.layers.Layer, ABC):

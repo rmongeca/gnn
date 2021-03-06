@@ -1,11 +1,11 @@
 """GNN model implementing a Message Passing Neural Network."""
 import tensorflow as tf
 
-from gnn.initial import DenseInitializer
-from gnn.input import GNNInput, MessagePassingInput, ReadoutInput, UpdateInput
-from gnn.message_passing import EdgeNetMessagePassing, ConcatenationMessage
-from gnn.readout import GatedReadout
-from gnn.update import GRUUpdate
+from .initial import PadInitializer
+from .input import GNNInput, MessagePassingInput, ReadoutInput, UpdateInput
+from .message_passing import ConcatenationMessage
+from .readout import GatedReadout
+from .update import GRUUpdate
 
 
 class GNN(tf.keras.Model):
@@ -18,19 +18,23 @@ class GNN(tf.keras.Model):
     message_size : int
         Size of the messages generated through message_passing layer.
     message_passing_iterations : int
-        Number of iterations for message passing phase of the net. Defaults to 3.ç
+        Number of iterations for message passing phase of the net. Defaults to 3.
+    output_size : int
+        Dimension of output version, for graph-level regression. Defaults to 1.
     initializer : tf.keras.layers.Layer
-        Initializer layer for GNN.
+        Initializer layer for GNN. Defaults to gnn.initial.PadInitializer.
     message_passing : tf.keras.layers.Layer
         Message Passing layer for GNN, subclass of gnn.message_passing.MessagePassingLayer.
+        Defaults to gnn.message_passing.ConcatenationMessage.
     update : tf.keras.layers.Layer
-        Update layer for GNN.
+        Update layer for GNN. Defaults to gnn.update.GRUUpdate.
     readout : tf.keras.layers.Layer
-        Readout layer for GNN.
+        Readout layer for GNN, subclass of gnn.readout.ReadoutLayer. Defaults to
+        gnn.readout.GatedReadout.
     """
 
     def __init__(self, hidden_state_size=10, message_size=10, message_passing_iterations=3,
-                 output_size=1, initializer=DenseInitializer, message_passing=ConcatenationMessage,
+                 output_size=1, initializer=PadInitializer, message_passing=ConcatenationMessage,
                  update=GRUUpdate, readout=GatedReadout, *args, **kwargs):
         super(GNN, self).__init__(*args, **kwargs)
         # Record arguments
@@ -96,5 +100,5 @@ class GNN(tf.keras.Model):
             "initializer": self.initializer,
             "message_passing": self.message_passing,
             "update": self.update,
-            "readout": self.readout
+            "readout": self.readout,
         }, **self.kwargs}

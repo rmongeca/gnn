@@ -1,7 +1,7 @@
 """Update Layer for GNN implementation."""
 import tensorflow as tf
 
-from gnn.input import UpdateInput
+from .input import UpdateInput
 
 
 class GRUUpdate(tf.keras.layers.Layer):
@@ -21,6 +21,6 @@ class GRUUpdate(tf.keras.layers.Layer):
         messages = tf.reshape(inputs.messages, [batch_size * num_nodes, self.message_size])
         hidden = tf.reshape(inputs.hidden, [batch_size * num_nodes, self.hidden_state_size])
         # Call update function
-        new_hidden, _ = self.up(messages, states=hidden)
+        new_hidden, _ = self.up(messages, states=hidden, training=training)
         # Restore batches
         return tf.reshape(new_hidden, [batch_size, num_nodes, self.hidden_state_size])
