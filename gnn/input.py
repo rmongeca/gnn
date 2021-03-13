@@ -1,7 +1,7 @@
 """Graph Input named tuple implementation"""
 import json
-from os import PathLike
 import tensorflow as tf
+from os import PathLike
 from typing import List, NamedTuple, Union
 
 

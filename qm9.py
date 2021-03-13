@@ -1,6 +1,4 @@
 """Example GNN for QM9"""
-from gnn.readout import GatedReadout
-from gnn.update import GRUUpdate
 import numpy as np
 import os
 import tensorflow as tf
@@ -11,6 +9,8 @@ from time import time
 from gnn import GNN, GNNInput
 from gnn.initial import DenseInitializer
 from gnn.message_passing import EdgeNetMessagePassing
+from gnn.readout import GatedReadout
+from gnn.update import GRUUpdate
 
 tf.keras.backend.clear_session()
 # tf.config.experimental_run_functions_eagerly(True)
