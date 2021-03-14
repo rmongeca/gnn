@@ -18,9 +18,9 @@ tf.keras.backend.clear_session()
 np.random.seed(42)
 
 # Paths
-log_dir = Path("/home/rmonge/UPC/TFM/gnn/data/logs")
-test_dir = Path("/home/rmonge/UPC/TFM/gnn/data/qm9/test")
-training_dir = Path("/home/rmonge/UPC/TFM/gnn/data/qm9/training")
+log_dir = Path("data/logs")
+test_dir = Path("data/qm9/test")
+training_dir = Path("data/qm9/training")
 
 # Constants
 target = "dipole_moment"
