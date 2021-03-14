@@ -1,5 +1,5 @@
 """GNN model implementing a Message Passing Neural Network."""
-import tensorflow as tf
+import tensorflow as _tf
 
 from .initial import PadInitializer
 from .input import GNNInput, MessagePassingInput, ReadoutInput, UpdateInput
@@ -8,7 +8,7 @@ from .readout import GatedReadout
 from .update import GRUUpdate
 
 
-class GNN(tf.keras.Model):
+class GNN(_tf.keras.Model):
     """General class for Message Passing Neural Network.
 
     Parameters
@@ -21,14 +21,14 @@ class GNN(tf.keras.Model):
         Number of iterations for message passing phase of the net. Defaults to 3.
     output_size : int
         Dimension of output version, for graph-level regression. Defaults to 1.
-    initializer : tf.keras.layers.Layer
+    initializer : _tf.keras.layers.Layer
         Initializer layer for GNN. Defaults to gnn.initial.PadInitializer.
-    message_passing : tf.keras.layers.Layer
+    message_passing : _tf.keras.layers.Layer
         Message Passing layer for GNN, subclass of gnn.message_passing.MessagePassingLayer.
         Defaults to gnn.message_passing.ConcatenationMessage.
-    update : tf.keras.layers.Layer
+    update : _tf.keras.layers.Layer
         Update layer for GNN. Defaults to gnn.update.GRUUpdate.
-    readout : tf.keras.layers.Layer
+    readout : _tf.keras.layers.Layer
         Readout layer for GNN, subclass of gnn.readout.ReadoutLayer. Defaults to
         gnn.readout.GatedReadout.
     """
@@ -62,9 +62,9 @@ class GNN(tf.keras.Model):
         num_batches = node_features[0]  # Should be None
         num_nodes = node_features[1]  # Should be None for variable size graphs
         num_edges = edge_features[1]  # Should be None for variable size graphs
-        hidden_shape = tf.TensorShape([num_batches, num_nodes, self.hidden_state_size])
-        messages_shape = tf.TensorShape([num_batches, num_nodes, self.message_size])
-        source_shape = target_shape = tf.TensorShape([num_batches, num_edges])
+        hidden_shape = _tf.TensorShape([num_batches, num_nodes, self.hidden_state_size])
+        messages_shape = _tf.TensorShape([num_batches, num_nodes, self.message_size])
+        source_shape = target_shape = _tf.TensorShape([num_batches, num_edges])
         self.init.build(node_features)
         self.mp.build(
             MessagePassingInput(
@@ -78,8 +78,8 @@ class GNN(tf.keras.Model):
 
     def call(self, inputs: GNNInput, training=None, mask=None):
         hidden = self.init(inputs.node_features, training=training)
-        hidden_initial = tf.identity(hidden)
-        for _ in tf.range(self.message_passing_iterations):
+        hidden_initial = _tf.identity(hidden)
+        for _ in _tf.range(self.message_passing_iterations):
             messages = self.mp(
                 MessagePassingInput(
                     edge_features=inputs.edge_features, edge_sources=inputs.edge_sources,
