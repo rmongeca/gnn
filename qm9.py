@@ -7,8 +7,8 @@ from pathlib import Path
 from time import time
 
 from gnn import GNN, GNNInput
-from gnn.initial import DenseInitializer
-from gnn.message_passing import EdgeNetMessagePassing
+from gnn.initial import PadInitializer
+from gnn.message_passing import EdgeNetMessage
 from gnn.readout import GatedReadout
 from gnn.update import GRUUpdate
 
@@ -23,6 +23,15 @@ test_dir = Path("data/qm9/test")
 training_dir = Path("data/qm9/training")
 
 # Constants
+node_feature_names = [
+    "element_c", "element_f", "element_h", "element_n", "element_o",
+    "aromatic", "acceptor", "donor", "atomic_number",
+    "hybridization_null", "hybridization_sp", "hybridization_sp2",
+    "hybridization_sp3", "hydrogen_count"
+]
+edge_feature_names = [
+    "distance", "order_1", "order_1_5", "order_2", "order_3"
+]
 target = "dipole_moment"
 
 # Files
@@ -38,14 +47,14 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_subdir)
 
 # TF Datasets
 training = tf.data.Dataset.from_generator(
-    **GNNInput.get_data_generator(training_fn, target))
+    **GNNInput.get_data_generator(training_fn, node_feature_names, edge_feature_names, target))
 test = tf.data.Dataset.from_generator(
-    **GNNInput.get_data_generator(test_fn, target))
+    **GNNInput.get_data_generator(test_fn, node_feature_names, edge_feature_names, target))
 
 # Training params
-n_epochs = 5
-batch_size = 32
-train_step_per_epochs = len(training_fn) // batch_size + 1
+n_epochs = 10
+batch_size = 10
+train_step_per_epochs = len(training_fn) // batch_size
 valid_step_per_epoch = len(test_fn)
 learning_schedule = tf.keras.optimizers.schedules.PolynomialDecay(
     initial_learning_rate=1.935e-4, decay_steps=900, end_learning_rate=1.84e-4, power=1.0
@@ -56,9 +65,9 @@ metrics = [tf.keras.metrics.MeanAbsoluteError()]
 
 
 # GNN Model
-model = GNN(hidden_state_size=15, message_size=20, message_passing_iterations=3,
-            output_size=len(target), initializer=DenseInitializer,
-            message_passing=EdgeNetMessagePassing, update=GRUUpdate, readout=GatedReadout)
+model = GNN(hidden_state_size=20, message_size=20, message_passing_iterations=4,
+            output_size=1, initializer=PadInitializer, message_passing=EdgeNetMessage,
+            update=GRUUpdate, readout=GatedReadout)
 model.compile(
     optimizer=optimizer,
     loss=loss,

@@ -33,7 +33,7 @@ class GNN(_tf.keras.Model):
         gnn.readout.GatedReadout.
     """
 
-    def __init__(self, hidden_state_size=10, message_size=10, message_passing_iterations=3,
+    def __init__(self, hidden_state_size=10, message_size=10, message_passing_iterations=4,
                  output_size=1, initializer=PadInitializer, message_passing=ConcatenationMessage,
                  update=GRUUpdate, readout=GatedReadout, *args, **kwargs):
         super(GNN, self).__init__(*args, **kwargs)
