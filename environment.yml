@@ -1,4 +1,4 @@
-name: gnn2
+name: gnn
 channels:
   - conda-forge
   - defaults
