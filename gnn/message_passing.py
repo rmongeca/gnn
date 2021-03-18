@@ -3,6 +3,7 @@ import tensorflow as _tf
 from abc import ABC as _ABC, abstractmethod as _abstractmethod
 
 from .input import MessagePassingInput, MessageFunctionInput
+from .mlp import MLP
 
 
 class MessagePassingLayer(_tf.keras.layers.Layer, _ABC):
@@ -50,7 +51,7 @@ class MessagePassingLayer(_tf.keras.layers.Layer, _ABC):
         if _tf.rank(edges) < 2:  # Ensure tensor rank is 2
             _tf.expand_dims(edges, axis=0)
         # Get neighbours for message passing
-        source_nodes = _tf.gather(inputs.edge_sources, indices=edge_list)
+        source_nodes = _tf.gather(params=inputs.edge_sources, indices=edge_list)
         neighbours = _tf.gather_nd(params=inputs.hidden, indices=source_nodes,
                                    name="message-passing-node-neighbours")
         if _tf.rank(neighbours) < 2:  # Ensure tensor rank is 2
@@ -88,7 +89,7 @@ class ConcatenationMessage(MessagePassingLayer):
         return _tf.math.reduce_sum(messages, axis=0)
 
 
-class EdgeNetMessagePassing(MessagePassingLayer):
+class EdgeNetMessage(MessagePassingLayer):
     """Edge Network Message Passing layer for GNN model.
 
     This Message Passing Layer builds a message for node n_v from another node n_w, with edge e_vw
@@ -98,28 +99,20 @@ class EdgeNetMessagePassing(MessagePassingLayer):
     then aggregates the messages for n_v summing over them: sum(m_vw for w in N(v)).
     """
 
-    def __init__(self, hidden_state_size=10, message_size=100,
-                 edge_num_layers=4, edge_hidden_dimension=50, edge_activation="relu",
-                 *args, **kwargs):
-        super(EdgeNetMessagePassing, self).__init__(hidden_state_size, message_size,
-                                                    *args, **kwargs)
-        self.edge_net_output_size = message_size * hidden_state_size
-        self.edge_net = _tf.keras.Sequential(name="message-passing-edge-network")
-        for num in range(edge_num_layers):
-            self.edge_net.add(_tf.keras.layers.Dense(units=edge_hidden_dimension,
-                                                     activation=edge_activation,
-                                                     name=f"edge-network-dense-{num + 1}"))
-        self.edge_net.add(_tf.keras.layers.Dense(units=self.edge_net_output_size,
-                                                 activation=edge_activation,
-                                                 name="edge-network-dense-output"))
-        self.reshape = _tf.keras.layers.Reshape(
-            target_shape=(message_size, hidden_state_size),
-            name="message-passing-edge-state-reshape"
-        )
+    def __init__(
+        self, hidden_state_size=10, message_size=10, num_layers=4, units=50, activation="relu",
+        *args, **kwargs
+    ):
+        super(EdgeNetMessage, self).__init__(hidden_state_size, message_size, *args, **kwargs)
+        self.edge_net = MLP(
+            activation=activation, name="mp-edge-net", num_layers=num_layers, units=units,
+            output_units=(message_size * hidden_state_size), **kwargs)
+        self.edge_net.add(_tf.keras.layers.Reshape(
+            target_shape=(message_size, hidden_state_size), name="mp-edge-net-reshape", **kwargs
+        ))
 
     def message(self, inputs: MessageFunctionInput, training=False):
         edge_network = self.edge_net(inputs.edges, training=training)
-        edge_network = self.reshape(edge_network, training=training)
         return _tf.linalg.matvec(edge_network, inputs.neighbours)
 
     def aggregation(self, messages, training=False):

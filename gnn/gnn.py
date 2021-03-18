@@ -88,8 +88,10 @@ class GNN(_tf.keras.Model):
             hidden = self.up(
                 UpdateInput(hidden=hidden, hidden_initial=hidden_initial, messages=messages),
                 training=training)
-        y = self.ro(ReadoutInput(hidden=hidden, hidden_initial=hidden_initial), training=training)
-        return y
+        return self.ro(
+            ReadoutInput(hidden=hidden, hidden_initial=hidden_initial),
+            training=training,
+        )
 
     def get_config(self):
         return {**{
