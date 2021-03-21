@@ -76,7 +76,6 @@ class GNN(_tf.keras.Model):
             ReadoutInput(hidden=hidden_shape, hidden_initial=hidden_shape))
         super(GNN, self).build([])
 
-    @_tf.function
     def call(self, inputs: GNNInput, training=None, mask=None):
         hidden = self.init(inputs.node_features, training=training)
         hidden_initial = _tf.identity(hidden)

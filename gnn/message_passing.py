@@ -47,17 +47,13 @@ class MessagePassingLayer(_tf.keras.layers.Layer, _ABC):
         # Get edges for message passing
         edge_list = _tf.where(inputs.edge_targets == node_id)
         edges = _tf.gather_nd(params=inputs.edge_features, indices=edge_list,
-                              name="message-passing-node-edges")
-        if _tf.rank(edges) < 2:  # Ensure tensor rank is 2
-            _tf.expand_dims(edges, axis=0)
+                              name="mp-node-edges")
         # Get neighbours for message passing
         source_nodes = _tf.gather(params=inputs.edge_sources, indices=edge_list)
         neighbours = _tf.gather_nd(params=inputs.hidden, indices=source_nodes,
-                                   name="message-passing-node-neighbours")
-        if _tf.rank(neighbours) < 2:  # Ensure tensor rank is 2
-            _tf.expand_dims(neighbours, axis=0)
+                                   name="mp-node-neighbours")
         # Get node for message passing
-        node = _tf.gather_nd(params=inputs.hidden, indices=[node_id])
+        node = _tf.gather_nd(params=inputs.hidden, indices=[[node_id]])
         messages = self.message(
             MessageFunctionInput(edges=edges, neighbours=neighbours, node=node), training=training)
         return self.aggregation(messages, training=training)
@@ -89,6 +85,23 @@ class ConcatenationMessage(MessagePassingLayer):
         return _tf.math.reduce_sum(messages, axis=0)
 
 
+class ConcatenateWithSourceMessage(MessagePassingLayer):
+    """Concatenation With Source Message Passing layer for GNN model.
+
+    This Message Passing Layer builds a message for node n_v from another node n_w, with edge e_vw
+    by concatenating (n_v, n_w, e_vw). Then all messages from n_v's neighbours are aggregated by
+    summing the messages.
+    """
+
+    def message(self, inputs: MessageFunctionInput, training=False):
+        node = _tf.repeat(
+            inputs.node, _tf.shape(inputs.neighbours)[0], axis=0)
+        return _tf.concat([node, inputs.neighbours, inputs.edges], axis=-1)
+
+    def aggregation(self, messages, training=False):
+        return _tf.math.reduce_sum(messages, axis=0)
+
+
 class EdgeNetMessage(MessagePassingLayer):
     """Edge Network Message Passing layer for GNN model.
 
@@ -114,6 +127,41 @@ class EdgeNetMessage(MessagePassingLayer):
     def message(self, inputs: MessageFunctionInput, training=False):
         edge_network = self.edge_net(inputs.edges, training=training)
         return _tf.linalg.matvec(edge_network, inputs.neighbours)
+
+    def aggregation(self, messages, training=False):
+        return _tf.math.reduce_sum(messages, axis=0)
+
+
+class FeedForwardMessage(MessagePassingLayer):
+    """Feed Forward Message Passing layer for GNN model.
+
+    This Message Passing Layer builds a message for node n_v from another node n_w, with edge e_vw
+    by feeding to a feed-forward neural network the concatenation of the source and target hidden
+    state along with the edge feature vector; then aggregates the messages for n_v summing over
+    them: sum(m_vw for w in N(v)).
+    """
+
+    def __init__(
+        self, hidden_state_size=10, message_size=10, num_layers=4, units=50, activation="relu",
+        *args, **kwargs
+    ):
+        self.hidden_state_size = hidden_state_size
+        self.ff_net = MLP(
+            activation=activation, name="mp-ff-net", num_layers=num_layers, units=units,
+            output_units=message_size, **kwargs)
+        super(FeedForwardMessage, self).__init__(hidden_state_size, message_size, *args, **kwargs)
+
+    def build(self, input_shapes):
+        concatenated_dims = self.hidden_state_size * 2 + input_shapes.edge_features[-1]
+        ff_shape = _tf.TensorShape([None, concatenated_dims])
+        self.ff_net.build(ff_shape)
+        super(FeedForwardMessage, self).build([])
+
+    def message(self, inputs: MessageFunctionInput, training=False):
+        node = _tf.repeat(
+            inputs.node, _tf.shape(inputs.neighbours)[0], axis=0)
+        ff_inputs = _tf.concat([node, inputs.neighbours, inputs.edges], axis=-1)
+        return self.ff_net(ff_inputs, training=training)
 
     def aggregation(self, messages, training=False):
         return _tf.math.reduce_sum(messages, axis=0)

@@ -27,12 +27,7 @@ class ReadoutLayer(_tf.keras.layers.Layer, _ABC):
             hidden=inputs.hidden[batch, :, :],
             hidden_initial=inputs.hidden_initial[batch, :, :],
         )
-        return self._readout(batch_inputs, training=training)
-
-    @_tf.function
-    def _readout(self, inputs: ReadoutInput, training=None):
-        """Wrapper around readout method with tf.function decorator."""
-        return self.readout(inputs=inputs, training=training)
+        return self.readout(batch_inputs, training=training)
 
     @_abstractmethod
     def readout(self, inputs: ReadoutInput, training=None):

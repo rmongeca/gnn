@@ -8,7 +8,7 @@ from time import time
 
 from gnn import GNN, GNNInput
 from gnn.initial import PadInitializer
-from gnn.message_passing import EdgeNetMessage
+from gnn.message_passing import FeedForwardMessage
 from gnn.readout import GatedReadout
 from gnn.update import GRUUpdate
 
@@ -53,13 +53,13 @@ validation = tf.data.Dataset.from_generator(
     **GNNInput.get_data_generator(validation_fn, node_feature_names, edge_feature_names, target))
 
 # GNN Model
-model = GNN(hidden_state_size=20, message_size=20, message_passing_iterations=4,
-            output_size=1, initializer=PadInitializer, message_passing=EdgeNetMessage,
+model = GNN(hidden_state_size=20, message_size=45, message_passing_iterations=3,
+            output_size=1, initializer=PadInitializer, message_passing=FeedForwardMessage,
             update=GRUUpdate, readout=GatedReadout)
 
 # Training params
-batch_size = 10
-n_epochs = 10
+batch_size = 2
+n_epochs = 1
 train = training.padded_batch(batch_size)
 train_step_per_epochs = len(training_fn) // batch_size
 valid = validation.padded_batch(1)
