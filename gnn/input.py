@@ -7,12 +7,15 @@ from os import PathLike as _PathLike
 from typing import List as _List, NamedTuple as _NamedTuple, Union as _Union
 
 
+_TfTypesUnion = _Union[_tf.Tensor, _tf.TensorShape, _tf.TensorSpec]
+
+
 class GNNInput(_NamedTuple):
     """Input named tuple for the GNN."""
-    edge_features: _Union[_tf.Tensor, _tf.TensorShape]
-    edge_sources: _Union[_tf.Tensor, _tf.TensorShape]
-    edge_targets: _Union[_tf.Tensor, _tf.TensorShape]
-    node_features: _Union[_tf.Tensor, _tf.TensorShape]
+    edge_features: _TfTypesUnion
+    edge_sources: _TfTypesUnion
+    edge_targets: _TfTypesUnion
+    node_features: _TfTypesUnion
 
     @classmethod
     def get_data_generator(
@@ -45,17 +48,13 @@ class GNNInput(_NamedTuple):
                     with open(fn, "r") as fp:
                         sample = _json.load(fp)
                     graph = _nx.readwrite.json_graph.node_link_graph(sample)
-                    edges = graph.edges(data=True)
+                    _edges = graph.edges(data=True)
+                    sources, targets, edges = zip(*[(src, tgt, edge) for src, tgt, edge in _edges])
                     edge_features = _tf.squeeze(_tf.constant(_np.array([
-                        [v for k, v in edge.items() if k in edge_feature_names]
-                        for _, _, edge in edges
+                        [v for k, v in edge.items() if k in edge_feature_names] for edge in edges
                     ])))
-                    edge_sources = _tf.squeeze(_tf.constant(_np.array(
-                        [src for src, _, _ in edges]
-                    )))
-                    edge_targets = _tf.squeeze(_tf.constant(_np.array(
-                        [tgt for _, tgt, _ in edges]
-                    )))
+                    edge_sources = _tf.squeeze(_tf.constant(_np.array(sources)))
+                    edge_targets = _tf.squeeze(_tf.constant(_np.array(targets)))
                     node_features = _tf.squeeze(_tf.constant(_np.array([
                         [v for k, v in node.items() if k in node_feature_names]
                         for node in dict(graph.nodes(data=True)).values()
@@ -79,27 +78,27 @@ class GNNInput(_NamedTuple):
 
 class MessagePassingInput(_NamedTuple):
     """Input named tuple for the MessagePassing layers."""
-    edge_features: _Union[_tf.Tensor, _tf.TensorShape]
-    edge_sources: _Union[_tf.Tensor, _tf.TensorShape]
-    edge_targets: _Union[_tf.Tensor, _tf.TensorShape]
-    hidden: _Union[_tf.Tensor, _tf.TensorShape]
+    edge_features: _TfTypesUnion
+    edge_sources: _TfTypesUnion
+    edge_targets: _TfTypesUnion
+    hidden: _TfTypesUnion
 
 
 class MessageFunctionInput(_NamedTuple):
     """Input named tuple for the Message function inside MessagePassing layers."""
-    edges: _Union[_tf.Tensor, _tf.TensorShape]
-    neighbours: _Union[_tf.Tensor, _tf.TensorShape]
-    node: _Union[_tf.Tensor, _tf.TensorShape]
+    edges: _TfTypesUnion
+    neighbours: _TfTypesUnion
+    node: _TfTypesUnion
 
 
 class UpdateInput(_NamedTuple):
     """Input named tuple for the Update layers."""
-    hidden: _Union[_tf.Tensor, _tf.TensorShape]
-    hidden_initial: _Union[_tf.Tensor, _tf.TensorShape]
-    messages: _Union[_tf.Tensor, _tf.TensorShape]
+    hidden: _TfTypesUnion
+    hidden_initial: _TfTypesUnion
+    messages: _TfTypesUnion
 
 
 class ReadoutInput(_NamedTuple):
     """Input named tuple for the Readout layers."""
-    hidden: _Union[_tf.Tensor, _tf.TensorShape]
-    hidden_initial: _Union[_tf.Tensor, _tf.TensorShape]
+    hidden: _TfTypesUnion
+    hidden_initial: _TfTypesUnion
