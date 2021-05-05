@@ -1,0 +1,25 @@
+train_dataset: /home/rmonge/UPC/TFM/gnn/data/qm9/train
+validation_dataset: /home/rmonge/UPC/TFM/gnn/data/qm9/validation
+output_path: /home/rmonge/UPC/TFM/gnn/logs
+
+# OPTIMIZATION OPTIONS
+loss: MeanSquaredError
+optimizer:
+  type: Adam
+  learning_rate:
+    type: PolynomialDecay
+    decay_steps: 20000
+    end_learning_rate: 1.84e-4
+    initial_learning_rate: 1.935e-4
+    power: 1.0
+metrics: [MeanAbsoluteError]
+
+# TRAINING OPTIONS
+batch_size: 1
+epochs: 20
+epoch_size: 1000
+shuffle_training_set: False
+shuffle_validation_set: False
+val_samples: 100
+val_frequency: 1
+execute_gpu: False
