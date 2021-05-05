@@ -71,8 +71,11 @@ def get_dataset_from_files(
         """Data generator for graph json files into GNNInput named tuples together with target
         tensor.
         """
+        samples = []
         for fn in files:
-            graph = _nx.readwrite.json_graph.node_link_graph(_json.load(open(fn, "r")))
+            samples.extend(_json.load(open(fn, "r")))
+        for sample in samples:
+            graph = _nx.readwrite.json_graph.node_link_graph(sample)
             _edges = graph.edges(data=True)
             sources, targets, edges = zip(*[(src, tgt, edge) for src, tgt, edge in _edges])
             edge_features = _tf.squeeze(_tf.constant(_np.array([
@@ -97,7 +100,7 @@ def get_dataset_from_files(
 
     return _tf.data.Dataset\
         .from_generator(generator=get_data, output_types=output_types, output_shapes=output_shapes)\
-        .batch(batch_size)\
+        .padded_batch(batch_size)\
         .cache()\
         .prefetch(_tf.data.experimental.AUTOTUNE)\
         .repeat()
