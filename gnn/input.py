@@ -101,6 +101,5 @@ def get_dataset_from_files(
     return _tf.data.Dataset\
         .from_generator(generator=get_data, output_types=output_types, output_shapes=output_shapes)\
         .padded_batch(batch_size)\
-        .cache()\
         .prefetch(_tf.data.experimental.AUTOTUNE)\
         .repeat()
