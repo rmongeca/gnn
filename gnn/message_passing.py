@@ -85,7 +85,7 @@ class ConcatenationMessage(MessagePassingLayer):
         return _tf.math.reduce_sum(messages, axis=0)
 
 
-class ConcatenateWithSourceMessage(MessagePassingLayer):
+class ConcatenateWithDesinationMessage(MessagePassingLayer):
     """Concatenation With Source Message Passing layer for GNN model.
 
     This Message Passing Layer builds a message for node n_v from another node n_w, with edge e_vw
