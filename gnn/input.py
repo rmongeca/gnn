@@ -3,7 +3,7 @@ import json as _json
 import networkx as _nx
 import numpy as _np
 import tensorflow as _tf
-from os import PathLike as _PathLike
+from pathlib import Path as _Path
 from typing import List as _List, NamedTuple as _NamedTuple, Union as _Union
 
 
@@ -47,7 +47,7 @@ class ReadoutInput(_NamedTuple):
 
 
 def get_dataset_from_files(
-    files: _List[_PathLike], node_feature_names: _List[str],
+    files: _List[_Path], node_feature_names: _List[str],
     edge_feature_names: _List[str], target: _Union[str, _List[str]], batch_size=1
 ):
     """Define a class generator to form a _tf.data.Dataset, and return generator and output
