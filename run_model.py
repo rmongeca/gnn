@@ -13,9 +13,14 @@ from models import qm9
 
 
 def main(
-    source_dir, training_dir, validation_dir, ignnition_dir, log_dir,
-    num_folds=11, num_repeats=10, random_seed=42
+    source_dir: Path, training_dir: Path, validation_dir: Path, ignnition_dir: Path, log_dir: Path,
+    num_folds=2, num_repeats=1, random_seed=42
 ):
+    assert source_dir.exists()
+    assert training_dir.exists()
+    assert validation_dir.exists()
+    assert ignnition_dir.exists()
+    assert log_dir.exists()
     # Params
     rng = np.random.RandomState(random_seed)
     # Get files and splits
@@ -43,9 +48,8 @@ def main(
         qm9.main(log_dir=log_dir, training_dir=training_dir, validation_dir=validation_dir)
         run_times["gnn"].append(time() - start)
     # Save time executions
-    with open(log_dir / f"run_model_times_{datetime.now():%Y%m%d%H%M%S}.json","w") as fp:
+    with open(log_dir / f"run_model_times_{datetime.now():%Y%m%d%H%M%S}.json", "w") as fp:
         json.dump(run_times, fp)
-
 
 
 if __name__ == "__main__":
