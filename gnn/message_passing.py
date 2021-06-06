@@ -142,14 +142,16 @@ class FeedForwardMessage(MessagePassingLayer):
     """
 
     def __init__(
-        self, hidden_state_size=10, message_size=10, num_layers=4, units=50, activation="relu",
-        *args, **kwargs
+        self, hidden_state_size=10, message_size=10, activation="relu", layer=None,
+        num_layers=4, output_activation=None, units=50, aggregation_fn=None, *args, **kwargs
     ):
+        super(FeedForwardMessage, self).__init__(
+            hidden_state_size=hidden_state_size, message_size=message_size, *args, **kwargs)
         self.hidden_state_size = hidden_state_size
         self.ff_net = MLP(
-            activation=activation, name="mp-ff-net", num_layers=num_layers, units=units,
-            output_units=message_size, **kwargs)
-        super(FeedForwardMessage, self).__init__(hidden_state_size, message_size, *args, **kwargs)
+            activation=activation, layer=layer, name="mp-ff-net", num_layers=num_layers,
+            output_activation=output_activation, output_units=message_size, units=units, **kwargs)
+        self.aggregation_fn = _tf.math.reduce_sum if aggregation_fn is None else aggregation_fn
 
     def build(self, input_shapes):
         concatenated_dims = self.hidden_state_size * 2 + input_shapes.edge_features[-1]
@@ -164,4 +166,4 @@ class FeedForwardMessage(MessagePassingLayer):
         return self.ff_net(ff_inputs, training=training)
 
     def aggregation(self, messages, training=False):
-        return _tf.math.reduce_sum(messages, axis=0)
+        return self.aggregation_fn(messages, axis=0)
