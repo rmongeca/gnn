@@ -152,7 +152,6 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
         assert np.shape(layout) == (N, 4)
         assert np.shape(dist) == np.shape(path_loss) == np.shape(channel_loss) == (N, N)
         diag_dist = np.diag(1/dist)
-        diag_path_loss = np.diag(path_loss)
         diag_channel_loss = np.diag(channel_loss)
         adjacency = 1/dist - np.multiply(np.eye(N), 1/dist)  # Remove paired transceiver-receiver
         weights = rng.uniform(size=N)  # Transceiver-receiver random weights
@@ -169,7 +168,6 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
                 "receiver_x": layout[link_idx, 2],
                 "receiver_y": layout[link_idx, 3],
                 "receiver_distance": diag_dist[link_idx],
-                "path_loss": diag_path_loss[link_idx],
                 "channel_loss": diag_channel_loss[link_idx],
                 "path_loss": path_loss[:, link_idx].tolist(),
                 "power": 0,
@@ -196,7 +194,7 @@ def get_wmmse_power(channel_loss, noise_power, max_iterations=100):
     # TODO: turn into Numpy operations to improve performance
     H = channel_loss
     K = np.shape(channel_loss)[0]
-    P_ini = np.random.rand(K,1)
+    P_ini = np.random.rand(K, 1)
     P_max = np.ones([K, 1])
     vnew = 0
     b = np.sqrt(P_ini)
