@@ -1,7 +1,7 @@
 # Custom project folders to ignore
-data
+data/*/
+logs/*/
 reference
-logs
 
 # Custom IDE/editor ignores
 .vscode
