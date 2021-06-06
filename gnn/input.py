@@ -16,6 +16,7 @@ class GNNInput(_NamedTuple):
     edge_sources: _TfTypesUnion
     edge_targets: _TfTypesUnion
     node_features: _TfTypesUnion
+    additional_inputs: _TfTypesUnion
 
 
 class MessagePassingInput(_NamedTuple):
@@ -47,8 +48,9 @@ class ReadoutInput(_NamedTuple):
 
 
 def get_dataset_from_files(
-    files: _List[_Path], node_feature_names: _List[str],
-    edge_feature_names: _List[str], target: _Union[str, _List[str]], batch_size=1
+    files: _List[_Path], node_feature_names: _List[str], edge_feature_names: _List[str],
+    target: _Union[str, _List[str]], additional_inputs_names: _List[str] = [], target_shapes=None,
+    batch_size=1, local=False
 ):
     """Define a class generator to form a _tf.data.Dataset, and return generator and output
     types and shapes.
@@ -57,14 +59,23 @@ def get_dataset_from_files(
         target = [target]
     num_edge_features = len(edge_feature_names)
     num_node_features = len(node_feature_names)
-    output_size = len(target)
-    output_types = (GNNInput(_tf.float32, _tf.int32, _tf.int32, _tf.float32), _tf.float32)
+    num_additional_inputs = len(additional_inputs_names)
+    output_size = len(target) if local else None
+    if target_shapes is None:
+        target_shapes = _tf.TensorShape([output_size])
+    output_types = (
+        GNNInput(_tf.float32, _tf.int32, _tf.int32, _tf.float32, _tf.float32), _tf.float32
+    )
     output_shapes = (
         GNNInput(
             edge_features=_tf.TensorShape([None, num_edge_features]),
             edge_sources=_tf.TensorShape([None]), edge_targets=_tf.TensorShape([None]),
             node_features=_tf.TensorShape([None, num_node_features]),
-        ), _tf.TensorShape([output_size])
+            additional_inputs=_tf.TensorShape(
+                [None, num_additional_inputs] if local else [num_additional_inputs]
+            )
+        ),
+        target_shapes
     )
 
     def get_data():
@@ -77,25 +88,40 @@ def get_dataset_from_files(
         for sample in samples:
             graph = _nx.readwrite.json_graph.node_link_graph(sample)
             _edges = graph.edges(data=True)
+            _nodes = dict(graph.nodes(data=True)).values()
             sources, targets, edges = zip(*[(src, tgt, edge) for src, tgt, edge in _edges])
-            edge_features = _tf.squeeze(_tf.constant(_np.array([
-                [v for k, v in edge.items() if k in edge_feature_names] for edge in edges
-            ])))
+            edge_features = _tf.constant(_np.array([
+                [edge[k] for k in edge_feature_names] for edge in edges
+            ]))
             edge_sources = _tf.squeeze(_tf.constant(_np.array(sources)))
             edge_targets = _tf.squeeze(_tf.constant(_np.array(targets)))
-            node_features = _tf.squeeze(_tf.constant(_np.array([
-                [v for k, v in node.items() if k in node_feature_names]
-                for node in dict(graph.nodes(data=True)).values()
-            ])))
+            node_features = _tf.constant(_np.array([
+                [node[k] for k in node_feature_names]
+                for node in _nodes
+            ]))
+            additional_inputs = (
+                _tf.constant(_np.array([
+                    [node[k] for k in additional_inputs_names]
+                    for node in _nodes
+                ]))
+                if local else
+                _tf.constant(_np.array([
+                    graph.graph[additonal_input] for additonal_input in additional_inputs_names
+                ]))
+            )
             data = GNNInput(
                 edge_features=edge_features,
                 edge_sources=edge_sources,
                 edge_targets=edge_targets,
                 node_features=node_features,
+                additional_inputs=additional_inputs,
             )
-            y = _tf.constant(_np.array([
-                graph.graph[_target] for _target in target
-            ]))
+            if local:
+                y = _tf.squeeze(_tf.constant(_np.array([
+                    [node[k] for k in target] for node in _nodes
+                ])))
+            else:
+                y = _tf.constant(_np.array([graph.graph[_target] for _target in target]))
             yield data, y
 
     return _tf.data.Dataset\
