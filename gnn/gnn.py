@@ -35,7 +35,8 @@ class GNN(_tf.keras.Model):
 
     def __init__(self, hidden_state_size=10, message_size=10, message_passing_iterations=4,
                  output_size=1, initializer=PadInitializer, message_passing=ConcatenationMessage,
-                 update=GRUUpdate, readout=GatedReadout, *args, **kwargs):
+                 update=GRUUpdate, readout=GatedReadout, initializer_args={},
+                 message_passing_args={}, update_args={}, readout_args={}, *args, **kwargs):
         super(GNN, self).__init__(*args, **kwargs)
         # Record arguments
         self.hidden_state_size = hidden_state_size
@@ -46,15 +47,18 @@ class GNN(_tf.keras.Model):
         self.message_passing = message_passing
         self.update = update
         self.readout = readout
-        self.kwargs = kwargs
+        self.initializer_args = initializer_args
+        self.message_passing_args = message_passing_args
+        self.update_args = update_args
+        self.readout_args = readout_args
         # Set inner layers
-        self.init = self.initializer(hidden_state_size=self.hidden_state_size, **kwargs)
+        self.init = self.initializer(hidden_state_size=self.hidden_state_size, **initializer_args)
         self.mp = self.message_passing(hidden_state_size=self.hidden_state_size,
-                                       message_size=self.message_size, **kwargs)
+                                       message_size=self.message_size, **message_passing_args)
         self.up = self.update(hidden_state_size=self.hidden_state_size,
-                              message_size=self.message_size, **kwargs)
+                              message_size=self.message_size, **update_args)
         self.ro = self.readout(hidden_state_size=self.hidden_state_size,
-                               output_size=self.output_size, **kwargs)
+                               output_size=self.output_size, **readout_args)
 
     def build(self, input_shape: GNNInput):
         edge_features = input_shape.edge_features
@@ -74,6 +78,7 @@ class GNN(_tf.keras.Model):
             UpdateInput(hidden=hidden_shape, hidden_initial=hidden_shape, messages=messages_shape))
         self.ro.build(
             ReadoutInput(hidden=hidden_shape, hidden_initial=hidden_shape))
+        self.has_additional_inputs = input_shape.additional_inputs[-1] != 0
         super(GNN, self).build([])
 
     @_tf.function
@@ -89,13 +94,13 @@ class GNN(_tf.keras.Model):
             hidden = self.up(
                 UpdateInput(hidden=hidden, hidden_initial=hidden_initial, messages=messages),
                 training=training)
-        return self.ro(
-            ReadoutInput(hidden=hidden, hidden_initial=hidden_initial),
-            training=training,
+        readout = self.ro(
+            ReadoutInput(hidden=hidden, hidden_initial=hidden_initial), training=training
         )
+        return _tf.concat([readout, inputs.additional_inputs], axis=-1)
 
     def get_config(self):
-        return {**{
+        return {
             "hidden_state_size": self.hidden_state_size,
             "message_passing_iterations": self.message_passing_iterations,
             "message_size": self.message_size,
@@ -104,4 +109,8 @@ class GNN(_tf.keras.Model):
             "message_passing": self.message_passing,
             "update": self.update,
             "readout": self.readout,
-        }, **self.kwargs}
+            "initializer_args": self.initializer_args,
+            "message_passing_args": self.message_passing_args,
+            "update_args": self.update_args,
+            "readout_args": self.readout_args,
+        }
