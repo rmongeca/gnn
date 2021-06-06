@@ -57,9 +57,6 @@ neural_networks:
   - type_layer: nn_layer
     activation: nn_activation
     units: 32
-  - type_layer: nn_layer
-    activation: nn_activation
-    units: hidden_state_dimension
 
 - nn_name: update_function
   nn_architecture:
