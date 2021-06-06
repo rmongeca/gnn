@@ -2,6 +2,19 @@
 import tensorflow as _tf
 
 
+class NormalizeInitializer(_tf.keras.layers.Layer):
+    """Initial hidden state generated from a Batch Normalization layer for Message Passing
+    Network."""
+
+    def __init__(self, hidden_state_size=10, *args, **kwargs):
+        super(NormalizeInitializer, self).__init__(*args, **kwargs)
+        self.normalizer = _tf.keras.layers.BatchNormalization(
+            axis=-1, center=True, scale=True, name="initializer-normalize")
+
+    def call(self, node_features, training=None):
+        return self.normalizer(node_features, training=training)
+
+
 class DenseInitializer(_tf.keras.layers.Layer):
     """Initial hidden state generated from a Dense layer for Message Passing Network."""
 
