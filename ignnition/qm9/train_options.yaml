@@ -1,6 +1,6 @@
-train_dataset: /home/rmonge/UPC/TFM/gnn/data/qm9/train
-validation_dataset: /home/rmonge/UPC/TFM/gnn/data/qm9/validation
-output_path: /home/rmonge/UPC/TFM/gnn/logs
+output_path: ./logs
+train_dataset: ./data/train
+validation_dataset: ./data/validation
 
 # OPTIMIZATION OPTIONS
 loss: MeanSquaredError
