@@ -70,14 +70,14 @@ neural_networks:
 - nn_name: message_function
   nn_architecture:
   - type_layer: nn_layer
-    units: nn_units
     activation: nn_activation
+    units: nn_units
   - type_layer: nn_layer
-    units: nn_units
     activation: nn_activation
+    units: nn_units
   - type_layer: nn_layer
-    units: nn_units
     activation: nn_activation
+    units: nn_units
   - type_layer: nn_layer
     units: hidden_state_dimension
 
@@ -88,14 +88,14 @@ neural_networks:
 - nn_name: readout_gate
   nn_architecture:
   - type_layer: nn_layer
-    units: nn_units
     activation: nn_activation
-  - type_layer: nn_layer
     units: nn_units
+  - type_layer: nn_layer
     activation: nn_activation
-  - type_layer: nn_layer
     units: nn_units
+  - type_layer: nn_layer
     activation: sigmoid
+    units: nn_units
 
 - nn_name: readout_state
   nn_architecture:

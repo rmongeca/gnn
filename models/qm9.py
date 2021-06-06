@@ -58,9 +58,24 @@ def main(
     loss = tf.keras.losses.MeanSquaredError()
     metrics = [tf.keras.metrics.MeanAbsoluteError()]
     # Model
+    message_passing_args = {
+        "aggregation_fn": tf.math.reduce_sum,
+        "activation": "relu",
+        "layer": tf.keras.layers.Dense,
+        "num_layers": 4,
+        "units": 50,
+    }
+    readout_args = {
+        "activation": "relu",
+        "gate_activation": "sigmoid",
+        "layer": tf.keras.layers.Dense,
+        "num_layers": 3,
+        "units": 50,
+    }
     model = GNN(hidden_state_size=25, message_size=25, message_passing_iterations=4,
                 output_size=1, initializer=PadInitializer, message_passing=FeedForwardMessage,
-                update=GRUUpdate, readout=GatedReadout)
+                update=GRUUpdate, readout=GatedReadout, message_passing_args=message_passing_args,
+                readout_args=readout_args)
     model.compile(
         optimizer=optimizer,
         loss=loss,
