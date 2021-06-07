@@ -99,4 +99,3 @@ dependencies:
     - tensorboardx==1.9
     - tensorflow==2.3.0
     - tensorflow-estimator==2.3.0
-prefix: /home/rmonge/miniconda3/envs/gnn
