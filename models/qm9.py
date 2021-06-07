@@ -39,7 +39,7 @@ def main(
     target = "dipole_moment"
     # Training params
     batch_size = 1
-    n_epochs = 20
+    n_epochs = 10
     train_step_per_epochs = 1000
     valid_step_per_epoch = 100
     validation_freq = 1

@@ -21,7 +21,7 @@ from tqdm.auto import tqdm
 
 # Generation options
 empty_dirs = True
-random_seed = 42
+random_seed = 20210205
 root_path = Path(__file__).parent.parent.parent
 raw_dir = root_path / Path("data/radio-resource-management/raw")
 train_dir = root_path / Path("data/radio-resource-management/train")
@@ -33,7 +33,7 @@ total_samples = train_samples + validation_samples
 rng = np.random.default_rng(seed=random_seed)
 
 # Dataset options, please see the referenced papers for more details
-n_links = 20
+n_links = 30
 field_length = 1000
 shortest_directLink_length = 2
 longest_directLink_length = 65
@@ -47,8 +47,7 @@ Rbp = 4 * tx_height * rx_height / signal_lambda
 Lbp = abs(20 * np.log10(np.power(signal_lambda, 2) / (8 * np.pi * tx_height * rx_height)))
 antenna_gain_decibel = 2.5
 # Network additional inputs
-noise_power_db = 10
-noise_power = 1/10**(noise_power_db/10)
+noise_power = 6.294627058970857e-15
 
 
 def _empty_dirs(dirs=None):
@@ -220,7 +219,7 @@ def get_wmmse_power(channel_loss, noise_power, max_iterations=100):
         if vnew - vold <= 1e-3:
             break
 
-    return np.round(np.squeeze(np.square(b)), 10)  # Get rid of minuscule powers
+    return np.round(np.squeeze(np.square(b)), 10)
 
 
 def join_graphs_into_dataset(files, output_dir, output_file_name="data.json", empty_dirs=False):

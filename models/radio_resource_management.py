@@ -10,10 +10,11 @@ from gnn.message_passing import FeedForwardMessage
 from gnn.readout import FeedForwardReadout
 from gnn.update import FeedForwardUpdate
 
+
 noise_power = tf.constant(6.294627058970857e-15)
 
 
-# @tf.function()
+@tf.function()
 def compute_sum_rate(power, loss, weights, N):
     """Compute Sum Rate from power allocation and channle loss matrix."""
     batch_shape = tf.shape(power)[:1]
@@ -30,11 +31,11 @@ def compute_sum_rate(power, loss, weights, N):
     # Compute SINR rates
     sinr = tf.ones_like(interference) + tf.divide(valid_rx_power, interference)
     sum_rate = tf.divide(tf.math.log(sinr), tf.math.log(tf.constant(2, dtype=tf.float32)))
-    weighted_sum_rate = sum_rate  # tf.multiply(weights, sum_rate)
+    weighted_sum_rate = tf.multiply(weights, sum_rate)
     return tf.reduce_mean(tf.reduce_sum(weighted_sum_rate, -1))
 
 
-# @tf.function()
+@tf.function()
 def sum_rate_loss(y_true, y_pred):
     """SINR sum rate loss.
 
@@ -53,13 +54,13 @@ def sum_rate_loss(y_true, y_pred):
         reference wmmse allocated power aproximation to compare with computed.
     """
     N = tf.shape(y_pred)[1]
-    power = tf.expand_dims(y_pred[:, :, -3], axis=0)
     weights = y_pred[:, :, -2]
+    power = tf.expand_dims(y_pred[:, :, -3], axis=0)
     sum_rate = compute_sum_rate(power, y_true, weights, N)
     return tf.negative(sum_rate)
 
 
-# @tf.function()
+@tf.function()
 def sum_rate_metric(y_true, y_pred):
     """WMMSE ratio metric.
 
@@ -78,11 +79,11 @@ def sum_rate_metric(y_true, y_pred):
         reference wmmse allocated power aproximation to compare with computed.
     """
     N = tf.shape(y_pred)[1]
-    power = tf.expand_dims(y_pred[:, :, -3], axis=0)
-    weights = y_pred[:, :, -2]
-    sum_rate = compute_sum_rate(power, y_true, weights, N)
     power_wmmse = tf.expand_dims(y_pred[:, :, -1], axis=0)
+    weights = y_pred[:, :, -2]
+    power = tf.expand_dims(y_pred[:, :, -3], axis=0)
     sum_rate_wmmse = compute_sum_rate(power_wmmse, y_true, weights, N)
+    sum_rate = compute_sum_rate(power, y_true, weights, N)
     return tf.multiply(tf.divide(sum_rate, sum_rate_wmmse), tf.constant(100, dtype=tf.float32))
 
 
@@ -108,7 +109,7 @@ def main(
     target_shapes = tf.TensorShape([None, None])
     # Training params
     batch_size = 1
-    n_epochs = 20
+    n_epochs = 10
     train_step_per_epochs = 1000
     valid_step_per_epoch = 100
     validation_freq = 1
@@ -126,7 +127,7 @@ def main(
         "activation": "relu",
         "layer": tf.keras.layers.Dense,
         "num_layers": 3,
-        "units": [5, 32],
+        "units": [5, 32, 32],
         "output_activation": "relu",
     }
     update_args = {
@@ -137,12 +138,12 @@ def main(
         "output_activation": "sigmoid",
     }
     readout_args = {
-        "activation": "relu",
         "layer": tf.keras.layers.Activation,
         "num_layers": 1,
+        "output_activation": "relu",
         "trainable": False,
     }
-    model = GNN(hidden_state_size=3, message_size=32, message_passing_iterations=3,
+    model = GNN(hidden_state_size=3, message_size=3, message_passing_iterations=3,
                 output_size=3, initializer=NormalizeInitializer, message_passing=FeedForwardMessage,
                 update=FeedForwardUpdate, readout=FeedForwardReadout,
                 message_passing_args=message_passing_args, update_args=update_args,

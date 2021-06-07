@@ -53,11 +53,19 @@ def main(
 
 
 if __name__ == "__main__":
+    # main(
+    #     source_dir=Path("data/qm9/raw"),
+    #     training_dir=Path("data/qm9/train"),
+    #     validation_dir=Path("data/qm9/validation"),
+    #     ignnition_dir=Path("ignnition/qm9"),
+    #     log_dir=Path("logs"),
+    #     random_seed=20210506
+    # )
     main(
-        source_dir=Path("data/qm9/raw"),
-        training_dir=Path("data/qm9/train"),
-        validation_dir=Path("data/qm9/validation"),
-        ignnition_dir=Path("ignnition/qm9"),
+        source_dir=Path("data/radio-resource-management/raw"),
+        training_dir=Path("data/radio-resource-management/train"),
+        validation_dir=Path("data/radio-resource-management/validation"),
+        ignnition_dir=Path("ignnition/radio-resource-management"),
         log_dir=Path("logs"),
-        random_seed=20210506
+        random_seed=20210224
     )
