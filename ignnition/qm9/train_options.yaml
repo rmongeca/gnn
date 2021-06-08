@@ -22,4 +22,3 @@ shuffle_training_set: False
 shuffle_validation_set: False
 val_samples: 100
 val_frequency: 1
-execute_gpu: False
