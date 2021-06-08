@@ -22,11 +22,11 @@ from tqdm.auto import tqdm
 # Generation options
 empty_dirs = True
 random_seed = 20210205
-root_path = Path(__file__).parent.parent.parent
-raw_dir = root_path / Path("data/radio-resource-management/raw")
-train_dir = root_path / Path("data/radio-resource-management/train")
+root_path = Path(__file__).parent
+raw_dir = root_path / Path("data/raw")
+train_dir = root_path / Path("data/train")
 train_samples = 1000
-validation_dir = root_path / Path("data/radio-resource-management/validation")
+validation_dir = root_path / Path("data/validation")
 validation_samples = 100
 # Computed
 total_samples = train_samples + validation_samples

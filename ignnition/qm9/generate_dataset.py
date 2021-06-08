@@ -30,11 +30,11 @@ empty_dirs = True
 limit = 2000  # Limit number of files to take from dataset. None to take all
 qm9_url = "https://s3-eu-west-1.amazonaws.com/pstorage-npg-968563215/3195389/dsgdb9nsd.xyz.tar.bz2"
 random_seed = 42
-root_path = Path(__file__).parent.parent.parent
-raw_dir = root_path / Path("data/qm9/raw")
-train_dir = root_path / Path("data/qm9/train")
+root_path = Path(__file__).parent
+raw_dir = root_path / Path("data/raw")
+train_dir = root_path / Path("data/train")
 train_samples = 1000
-validation_dir = root_path / Path("data/qm9/validation")
+validation_dir = root_path / Path("data/validation")
 validation_samples = 100
 
 
