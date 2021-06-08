@@ -9,12 +9,12 @@ import json
 
 import ignnition
 import utils
-from models import qm9
+from models import qm9, radio_resource_management as rrm
 
 
 def main(
     source_dir: Path, training_dir: Path, validation_dir: Path, ignnition_dir: Path, log_dir: Path,
-    num_folds=2, num_repeats=1, random_seed=42
+    gnn_model, num_folds=2, num_repeats=1, random_seed=42
 ):
     assert source_dir.exists()
     assert training_dir.exists()
@@ -45,7 +45,7 @@ def main(
         run_times["ignnition"].append(time() - start)
         # GNN
         start = time()
-        qm9.main(log_dir=log_dir, training_dir=training_dir, validation_dir=validation_dir)
+        gnn_model.main(log_dir=log_dir, training_dir=training_dir, validation_dir=validation_dir)
         run_times["gnn"].append(time() - start)
     # Save time executions
     with open(log_dir / f"run_model_times_{datetime.now():%Y%m%d%H%M%S}.json", "w") as fp:
@@ -53,19 +53,21 @@ def main(
 
 
 if __name__ == "__main__":
-    # main(
-    #     source_dir=Path("data/qm9/raw"),
-    #     training_dir=Path("data/qm9/train"),
-    #     validation_dir=Path("data/qm9/validation"),
-    #     ignnition_dir=Path("ignnition/qm9"),
-    #     log_dir=Path("logs"),
-    #     random_seed=20210506
-    # )
     main(
-        source_dir=Path("data/radio-resource-management/raw"),
-        training_dir=Path("data/radio-resource-management/train"),
-        validation_dir=Path("data/radio-resource-management/validation"),
+        source_dir=Path("ignnition/qm9/data/raw"),
+        training_dir=Path("ignnition/qm9/data/train"),
+        validation_dir=Path("ignnition/qm9/data/validation"),
+        ignnition_dir=Path("ignnition/qm9"),
+        log_dir=Path("ignnition/qm9/logs"),
+        gnn_model=qm9,
+        random_seed=20210506
+    )
+    main(
+        source_dir=Path("ignnition/radio-resource-management/data/raw"),
+        training_dir=Path("ignnition/radio-resource-management/data/train"),
+        validation_dir=Path("ignnition/radio-resource-management/data/validation"),
         ignnition_dir=Path("ignnition/radio-resource-management"),
-        log_dir=Path("logs"),
+        log_dir=Path("ignnition/radio-resource-management/logs"),
+        gnn_model=rrm,
         random_seed=20210224
     )
