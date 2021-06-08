@@ -91,22 +91,23 @@ def get_dataset_from_files(
             _nodes = dict(graph.nodes(data=True)).values()
             sources, targets, edges = zip(*[(src, tgt, edge) for src, tgt, edge in _edges])
             edge_features = _tf.constant(_np.array([
-                [edge[k] for k in edge_feature_names] for edge in edges
+                [edge[k] for k in edge_feature_names if k in edge] for edge in edges
             ]))
             edge_sources = _tf.squeeze(_tf.constant(_np.array(sources)))
             edge_targets = _tf.squeeze(_tf.constant(_np.array(targets)))
             node_features = _tf.constant(_np.array([
-                [node[k] for k in node_feature_names]
+                [node[k] for k in node_feature_names if k in node]
                 for node in _nodes
             ]))
             additional_inputs = (
                 _tf.constant(_np.array([
-                    [node[k] for k in additional_inputs_names]
+                    [node[k] for k in additional_inputs_names if k in node]
                     for node in _nodes
                 ]))
                 if local else
                 _tf.constant(_np.array([
-                    graph.graph[additonal_input] for additonal_input in additional_inputs_names
+                    graph.graph[additional_input] for additional_input in additional_inputs_names
+                    if additional_input in graph.graph
                 ]))
             )
             data = GNNInput(
@@ -118,10 +119,12 @@ def get_dataset_from_files(
             )
             if local:
                 y = _tf.squeeze(_tf.constant(_np.array([
-                    [node[k] for k in target] for node in _nodes
+                    [node[k] for k in target if k in node] for node in _nodes
                 ])))
             else:
-                y = _tf.constant(_np.array([graph.graph[_target] for _target in target]))
+                y = _tf.constant(_np.array([
+                    graph.graph[_target] for _target in target if _target in graph.graph
+                ]))
             yield data, y
 
     return _tf.data.Dataset\
