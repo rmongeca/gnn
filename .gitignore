@@ -2,6 +2,8 @@
 data/*/
 logs/*/
 reference
+ignnition/*/data
+ignnition/*/logs
 
 # Custom IDE/editor ignores
 .vscode
