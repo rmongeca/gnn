@@ -1,6 +1,6 @@
 # QM9 model definition for iGNNition model
 entities:
-- name: transceiver_receiver_pair
+- name: transmitter_receiver_pair
   state_dimension: hidden_state_dimension
   initial_state:
     - type: neural_network
@@ -17,16 +17,16 @@ message_passing:
   num_iterations: 3
   stages:
     - stage_message_passings:
-      - destination_entity: transceiver_receiver_pair
+      - destination_entity: transmitter_receiver_pair
         source_entities:
-          - name: transceiver_receiver_pair
+          - name: transmitter_receiver_pair
             message:
               - type: neural_network
                 nn_name: message_function
                 input:
                   - source
                   - destination
-                  - $transceiver_receiver_dist
+                  - $transceiver_receiver_loss
         aggregation:
           - type: max
         update:
@@ -36,7 +36,7 @@ message_passing:
 readout:
 - type: neural_network
   nn_name: readout_function
-  input: [transceiver_receiver_pair, $weights, $wmmse_power]
+  input: [transmitter_receiver_pair, $weights, $wmmse_power]
   output_label: [$path_loss]
 
 neural_networks:

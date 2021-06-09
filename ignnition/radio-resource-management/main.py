@@ -2,7 +2,7 @@ import ignnition
 import tensorflow as tf
 from pathlib import Path
 
-noise_power = tf.constant(6.294627058970857e-15)
+noise_power = tf.constant(4e-12)
 
 
 @tf.function()

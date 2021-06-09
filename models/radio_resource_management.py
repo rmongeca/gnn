@@ -11,7 +11,7 @@ from gnn.readout import FeedForwardReadout
 from gnn.update import FeedForwardUpdate
 
 
-noise_power = tf.constant(6.294627058970857e-15)
+noise_power = tf.constant(4e-12)
 
 
 @tf.function()
@@ -99,7 +99,7 @@ def main(
         "power",
     ]
     edge_feature_names = [
-        "transceiver_receiver_dist"
+        "transceiver_receiver_loss"
     ]
     additional_inputs_names = [
         "weights",

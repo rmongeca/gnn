@@ -33,7 +33,7 @@ total_samples = train_samples + validation_samples
 rng = np.random.default_rng(seed=random_seed)
 
 # Dataset options, please see the referenced papers for more details
-n_links = 30
+n_links = 10
 field_length = 1000
 shortest_directLink_length = 2
 longest_directLink_length = 65
@@ -47,7 +47,7 @@ Rbp = 4 * tx_height * rx_height / signal_lambda
 Lbp = abs(20 * np.log10(np.power(signal_lambda, 2) / (8 * np.pi * tx_height * rx_height)))
 antenna_gain_decibel = 2.5
 # Network additional inputs
-noise_power = 6.294627058970857e-15
+noise_power = 4e-12
 
 
 def _empty_dirs(dirs=None):
@@ -152,7 +152,7 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
         assert np.shape(dist) == np.shape(path_loss) == np.shape(channel_loss) == (N, N)
         diag_dist = np.diag(1/dist)
         diag_channel_loss = np.diag(channel_loss)
-        adjacency = 1/dist - np.multiply(np.eye(N), 1/dist)  # Remove paired transceiver-receiver
+        adjacency = channel_loss - np.multiply(np.eye(N), channel_loss)  # Remove own pair
         weights = rng.uniform(size=N)  # Transceiver-receiver random weights
         weights = weights / weights.sum()  # Normalize weights
         wmmse_power = get_wmmse_power(channel_loss, noise_power)
@@ -161,7 +161,7 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
         # altough the loss we plan to use will be unsupervised.
         graph.add_nodes_from([
             (link_idx, {
-                "entity": "transceiver_receiver_pair",
+                "entity": "transmitter_receiver_pair",
                 "transceiver_x": layout[link_idx, 0],
                 "transceiver_y": layout[link_idx, 1],
                 "receiver_x": layout[link_idx, 2],
@@ -177,7 +177,7 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
         ])
         graph.add_edges_from([
             (src, dst, {
-                "transceiver_receiver_dist": adjacency[src, dst]
+                "transceiver_receiver_loss": adjacency[src, dst]
             })
             for src, dst in product(range(N), range(N)) if src != dst
         ])
@@ -190,7 +190,6 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
 
 def get_wmmse_power(channel_loss, noise_power, max_iterations=100):
     """Get WMMSE optimimum power aproximation for given matrix of channel losses and noise power."""
-    # TODO: turn into Numpy operations to improve performance
     H = channel_loss
     K = np.shape(channel_loss)[0]
     P_ini = np.random.rand(K, 1)
