@@ -3,7 +3,7 @@ from pathlib import Path
 from time import time
 
 import numpy as np
-from sklearn.model_selection import RepeatedKFold
+from sklearn.model_selection import RepeatedKFold, KFold
 
 import json
 
@@ -14,7 +14,7 @@ from models import qm9, radio_resource_management as rrm
 
 def main(
     source_dir: Path, training_dir: Path, validation_dir: Path, ignnition_dir: Path, log_dir: Path,
-    gnn_model, num_folds=2, num_repeats=1, random_seed=42
+    gnn_model, num_folds=2, num_repeats=0, random_seed=42
 ):
     assert source_dir.exists()
     assert training_dir.exists()
@@ -26,9 +26,11 @@ def main(
     # Get files and splits
     files = np.array(list(source_dir.glob("*.json")))
     rng.shuffle(files)
-    splits = RepeatedKFold(
-        n_splits=num_folds, n_repeats=num_repeats, random_state=rng
-    ).split(files)
+    kfold = (
+        RepeatedKFold(n_splits=num_folds, n_repeats=num_repeats, random_state=rng)
+        if num_repeats > 0 else KFold(n_splits=num_folds, random_state=rng)
+    )
+    splits = kfold.split(files)
     run_times = {
         "ignnition": [],
         "gnn": []
