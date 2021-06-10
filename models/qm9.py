@@ -39,14 +39,14 @@ def main(
     target = "dipole_moment"
     # Training params
     batch_size = 1
-    n_epochs = 10
-    train_step_per_epochs = 1000
-    valid_step_per_epoch = 100
+    n_epochs = 20
+    train_step_per_epochs = 10000
+    valid_step_per_epoch = 1000
     validation_freq = 1
     learning_schedule_params = {
         "initial_learning_rate": 1.935e-4,
         "decay_steps": 20000,
-        "end_learning_rate": 1.84e-4,
+        "end_learning_rate": 1.84e-5,
         "power": 1.0
     }
     # Files

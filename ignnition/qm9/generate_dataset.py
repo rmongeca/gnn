@@ -27,15 +27,15 @@ from rdkit import Chem
 
 # Parameters to determine dataset generation
 empty_dirs = True
-limit = 2000  # Limit number of files to take from dataset. None to take all
+limit = 11000  # Limit number of files to take from dataset. None to take all
 qm9_url = "https://s3-eu-west-1.amazonaws.com/pstorage-npg-968563215/3195389/dsgdb9nsd.xyz.tar.bz2"
 random_seed = 42
 root_path = Path(__file__).parent
 raw_dir = root_path / Path("data/raw")
 train_dir = root_path / Path("data/train")
-train_samples = 1000
+train_samples = 10000
 validation_dir = root_path / Path("data/validation")
-validation_samples = 100
+validation_samples = 1000
 
 
 def _empty_dirs(dirs=None):
@@ -156,7 +156,7 @@ def qm9_download_and_extract(
         print(f"Extracting & transforming molecule files to {output_dir}...")
         while(elem is not None and limit is not None and i < limit):
             file = tar.extractfile(elem)
-            molecule = [l.split("\t") for l in file.read().decode("utf-8").split("\n")]
+            molecule = [line.split("\t") for line in file.read().decode("utf-8").split("\n")]
             graph = process_func(molecule)
             filepath = Path(output_dir) / f"{output_prefix}_{i}.json"
             with filepath.open("w") as _f:
@@ -171,7 +171,7 @@ def split_traing_validation(
     if empty_dirs:
         _empty_dirs([train_dir, validation_dir])
     files = np.array(list(Path(raw_dir).glob("*.json")))
-    assert files.shape[0] > train_samples+validation_samples, \
+    assert files.shape[0] >= train_samples+validation_samples, \
         "Train + Validation samples exceed number of files available."
     np.random.shuffle(files)
     training_files = files[validation_samples:(train_samples + validation_samples)]
