@@ -1,6 +1,7 @@
 # Custom project folders to ignore
-data/*/
-logs/*/
+data/
+logs/
+plots/
 reference
 ignnition/*/data
 ignnition/*/logs
