@@ -28,7 +28,7 @@ def main(
     rng.shuffle(files)
     kfold = (
         RepeatedKFold(n_splits=num_folds, n_repeats=num_repeats, random_state=rng)
-        if num_repeats > 0 else KFold(n_splits=num_folds, random_state=rng)
+        if num_repeats > 0 else KFold(n_splits=num_folds, random_state=rng, shuffle=True)
     )
     splits = kfold.split(files)
     run_times = {
@@ -64,12 +64,12 @@ if __name__ == "__main__":
         gnn_model=qm9,
         random_seed=20210506
     )
-    main(
-        source_dir=Path("ignnition/radio-resource-management/data/raw"),
-        training_dir=Path("ignnition/radio-resource-management/data/train"),
-        validation_dir=Path("ignnition/radio-resource-management/data/validation"),
-        ignnition_dir=Path("ignnition/radio-resource-management"),
-        log_dir=Path("ignnition/radio-resource-management/logs"),
-        gnn_model=rrm,
-        random_seed=20210224
-    )
+    # main(
+    #     source_dir=Path("ignnition/radio-resource-management/data/raw"),
+    #     training_dir=Path("ignnition/radio-resource-management/data/train"),
+    #     validation_dir=Path("ignnition/radio-resource-management/data/validation"),
+    #     ignnition_dir=Path("ignnition/radio-resource-management"),
+    #     log_dir=Path("ignnition/radio-resource-management/logs"),
+    #     gnn_model=rrm,
+    #     random_seed=20210224
+    # )
