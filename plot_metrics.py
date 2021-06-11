@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 import json
+import math
 import os
 from functools import partial
 from pathlib import Path
@@ -19,7 +20,7 @@ _model_labels = [
     ("GNN TF2", "gnn"),
     ("iGNNition", "experiment"),
 ]
-plt.rcParams.update({'font.size': 22})
+plt.rcParams.update({"font.size": 22})
 
 
 def extract_event_simple_value(event_file, tag_dict):
@@ -168,21 +169,93 @@ def epoch_plots(
     stats,
     metrics,
     output_dir,
+    error_bars=False,
+    smooth=True,
+    interp_kind="zero",
+    interp_num=200,
+    window_length=101,
+    polyorder=1,
 ):
-    stats_gnn = stats["GNN TF2"].groupby("epoch").mean().reset_index()
-    stats_ign = stats["iGNNition"].groupby("epoch").mean().reset_index()
+    smooth_partial = partial(
+        smoooth_func,
+        interp_kind=interp_kind,
+        interp_num=interp_num,
+        window_length=window_length,
+        polyorder=polyorder,
+    )
+    mean_gnn = stats["GNN TF2"].groupby("epoch").mean().reset_index()
+    std_gnn = stats["GNN TF2"].groupby("epoch").std().reset_index()
+    mean_ign = stats["iGNNition"].groupby("epoch").mean().reset_index()
+    std_ign = stats["iGNNition"].groupby("epoch").std().reset_index()
     for name, metric in metrics:
-        plt.figure(figsize=(10, 8), dpi=300)
-
         fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
-        plt.plot(stats_gnn["epoch"], stats_gnn[metric], "k-", label="GNN TF2")
-        plt.plot(stats_ign["epoch"], stats_ign[metric], "k--", label="iGNNition")
+        if error_bars:
+            plt.errorbar(
+                mean_gnn["epoch"],
+                mean_gnn[metric],
+                fmt="k-",
+                yerr=std_gnn[metric],
+                label="GNN TF2",
+            )
+            plt.errorbar(
+                mean_ign["epoch"],
+                mean_ign[metric],
+                fmt="k--",
+                yerr=std_ign[metric],
+                label="iGNNition",
+            )
+        else:
+            x_gnn, y_gnn = (
+                smooth_partial(mean_gnn["epoch"], mean_gnn[metric])
+                if smooth
+                else (mean_gnn["epoch"], mean_gnn[metric])
+            )
+            x_ign, y_ign = (
+                smooth_partial(mean_ign["epoch"], mean_ign[metric])
+                if smooth
+                else (mean_ign["epoch"], mean_ign[metric])
+            )
+            plt.plot(
+                x_gnn,
+                y_gnn,
+                "k-",
+                label="GNN TF2",
+            )
+            plt.plot(
+                x_ign,
+                y_ign,
+                "k--",
+                label="iGNNition",
+            )
         plt.legend()
         plt.xlabel("Epoch")
         plt.ylabel(name)
         plt.savefig(
             output_dir / f"{model}_{name}_epoch.png", facecolor=fig.get_facecolor()
         )
+
+
+def time_plots(model, log_dir, output_dir):
+    _model_labels = {"ignnition": "iGNNition", "gnn": "GNN TF2"}
+    times = json.load(open(next(log_dir.glob("run_model_times_*.json")), "r"))
+    times_sample = [
+        [1000 * time / 11000 for time in times[label]] for label in sorted(times)
+    ]
+    fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
+    plt.boxplot(
+        times_sample,
+        sym="",
+        labels=[_model_labels[label] for label in sorted(times)],
+        widths=[0.5] * 2,
+    )
+    plt.ylim(
+        (
+            math.floor(np.array(times_sample).min()),
+            math.ceil(np.array(times_sample).max()),
+        )
+    )
+    plt.ylabel("Time / sample (ms)")
+    plt.savefig(output_dir / f"{model}_time.png", facecolor=fig.get_facecolor())
 
 
 def main(model, metrics, model_labels=None, output_dir=Path("plots")):
@@ -201,7 +274,8 @@ def main(model, metrics, model_labels=None, output_dir=Path("plots")):
     print("Stats extracted, making plots...")
 
     ecdf_plots(model, stats, metrics, output_dir, smooth=True)
-    epoch_plots(model, stats, metrics, output_dir)
+    epoch_plots(model, stats, metrics, output_dir, error_bars=False, smooth=True)
+    time_plots(model, log_dir, output_dir)
 
 
 if __name__ == "__main__":
