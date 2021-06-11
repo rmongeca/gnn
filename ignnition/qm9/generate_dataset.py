@@ -19,7 +19,6 @@ import numpy as np
 import os
 import pysmiles
 import requests
-import shutil
 import tarfile
 import tempfile
 from pathlib import Path
@@ -176,21 +175,15 @@ def split_traing_validation(
     np.random.shuffle(files)
     training_files = files[validation_samples:(train_samples + validation_samples)]
     validation_files = files[:validation_samples]
-    print(f"Copying training graphs into {raw_dir / 'traing'}")
-    for file in training_files:
-        shutil.copy(file, raw_dir / "train")
     print(f"Joining training graphs into {train_dir}")
     join_graphs_into_dataset(training_files, output_dir=train_dir)
-    print(f"Copying validation graphs into {raw_dir / 'validation'}")
-    for file in validation_files:
-        shutil.copy(file, raw_dir / "validation")
     print(f"Joining validation graphs into {validation_dir}")
     join_graphs_into_dataset(validation_files, output_dir=validation_dir)
 
 
 if __name__ == "__main__":
     np.random.seed(random_seed)
-    for _dir in [raw_dir, train_dir, validation_dir, raw_dir / "train", raw_dir / "validation"]:
+    for _dir in [raw_dir, train_dir, validation_dir]:
         os.makedirs(_dir, exist_ok=True)
     qm9_download_and_extract(url=qm9_url, limit=limit, output_dir=raw_dir, empty_dirs=empty_dirs)
     split_traing_validation(
