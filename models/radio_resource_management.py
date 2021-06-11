@@ -11,7 +11,7 @@ from gnn.readout import FeedForwardReadout
 from gnn.update import FeedForwardUpdate
 
 
-noise_power = tf.constant(4e-12)
+noise_power = tf.constant(6.294627058970857e-15)
 
 
 @tf.function()
@@ -109,9 +109,9 @@ def main(
     target_shapes = tf.TensorShape([None, None])
     # Training params
     batch_size = 1
-    n_epochs = 10
-    train_step_per_epochs = 1000
-    valid_step_per_epoch = 100
+    n_epochs = 3  # 20
+    train_step_per_epochs = 10000
+    valid_step_per_epoch = 1000
     validation_freq = 1
     learning_rate = 0.001
     # Files
