@@ -19,6 +19,7 @@ _model_labels = [
     ("GNN TF2", "gnn"),
     ("iGNNition", "experiment"),
 ]
+plt.rcParams.update({'font.size': 22})
 
 
 def extract_event_simple_value(event_file, tag_dict):
@@ -153,13 +154,35 @@ def ecdf_plots(
             if smooth
             else (ecdf_ignnition.x, ecdf_ignnition.y)
         )
-        plt.figure(figsize=(10, 8), dpi=300)
+        fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
         plt.plot(x_gnn, y_gnn, "k-", label="GNN TF2")
         plt.plot(x_ignnition, y_ignnition, "k--", label="iGNNition")
         plt.legend()
         plt.xlabel(name)
         plt.ylabel("Probability")
-        plt.savefig(output_dir / f"{model}_{name}.png")
+        plt.savefig(output_dir / f"{model}_{name}.png", facecolor=fig.get_facecolor())
+
+
+def epoch_plots(
+    model,
+    stats,
+    metrics,
+    output_dir,
+):
+    stats_gnn = stats["GNN TF2"].groupby("epoch").mean().reset_index()
+    stats_ign = stats["iGNNition"].groupby("epoch").mean().reset_index()
+    for name, metric in metrics:
+        plt.figure(figsize=(10, 8), dpi=300)
+
+        fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
+        plt.plot(stats_gnn["epoch"], stats_gnn[metric], "k-", label="GNN TF2")
+        plt.plot(stats_ign["epoch"], stats_ign[metric], "k--", label="iGNNition")
+        plt.legend()
+        plt.xlabel("Epoch")
+        plt.ylabel(name)
+        plt.savefig(
+            output_dir / f"{model}_{name}_epoch.png", facecolor=fig.get_facecolor()
+        )
 
 
 def main(model, metrics, model_labels=None, output_dir=Path("plots")):
@@ -178,6 +201,7 @@ def main(model, metrics, model_labels=None, output_dir=Path("plots")):
     print("Stats extracted, making plots...")
 
     ecdf_plots(model, stats, metrics, output_dir, smooth=True)
+    epoch_plots(model, stats, metrics, output_dir)
 
 
 if __name__ == "__main__":
