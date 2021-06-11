@@ -1,6 +1,8 @@
 # Custom project folders to ignore
 data/
 logs/
+big_logs/
+small_logs/
 plots/
 reference
 ignnition/*/data
