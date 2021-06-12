@@ -103,9 +103,11 @@ def main(
 
 if __name__ == "__main__":
     # Paths
-    training_dir = Path("data/qm9/train")
-    validation_dir = Path("data/qm9/validation")
-    log_dir = Path("data/logs")
+    workspace_root = Path(__file__).parent.parent.absolute()
+    model_path = workspace_root / Path("ignnition/qm9")
+    training_dir = model_path / Path("data/train")
+    validation_dir = model_path / Path("data/validation")
+    log_dir = model_path / Path("logs")
     main(
         log_dir=log_dir,
         training_dir=training_dir,
