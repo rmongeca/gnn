@@ -14,7 +14,7 @@ from models import qm9, radio_resource_management as rrm
 
 def main(
     source_dir: Path, training_dir: Path, validation_dir: Path, ignnition_dir: Path, log_dir: Path,
-    gnn_model, num_folds=11, num_repeats=0, random_seed=42
+    gnn_model, num_folds=5, num_repeats=0, random_seed=42
 ):
     assert source_dir.exists()
     assert training_dir.exists()
@@ -55,21 +55,21 @@ def main(
 
 
 if __name__ == "__main__":
-    main(
-        source_dir=Path("ignnition/qm9/data/raw"),
-        training_dir=Path("ignnition/qm9/data/train"),
-        validation_dir=Path("ignnition/qm9/data/validation"),
-        ignnition_dir=Path("ignnition/qm9"),
-        log_dir=Path("ignnition/qm9/logs"),
-        gnn_model=qm9,
-        random_seed=20210506
-    )
     # main(
-    #     source_dir=Path("ignnition/radio-resource-management/data/raw"),
-    #     training_dir=Path("ignnition/radio-resource-management/data/train"),
-    #     validation_dir=Path("ignnition/radio-resource-management/data/validation"),
-    #     ignnition_dir=Path("ignnition/radio-resource-management"),
-    #     log_dir=Path("ignnition/radio-resource-management/logs"),
-    #     gnn_model=rrm,
-    #     random_seed=20210224
+    #     source_dir=Path("ignnition/qm9/data/raw"),
+    #     training_dir=Path("ignnition/qm9/data/train"),
+    #     validation_dir=Path("ignnition/qm9/data/validation"),
+    #     ignnition_dir=Path("ignnition/qm9"),
+    #     log_dir=Path("ignnition/qm9/logs"),
+    #     gnn_model=qm9,
+    #     random_seed=20210506
     # )
+    main(
+        source_dir=Path("ignnition/radio-resource-management/data/raw"),
+        training_dir=Path("ignnition/radio-resource-management/data/train"),
+        validation_dir=Path("ignnition/radio-resource-management/data/validation"),
+        ignnition_dir=Path("ignnition/radio-resource-management"),
+        log_dir=Path("ignnition/radio-resource-management/logs"),
+        gnn_model=rrm,
+        random_seed=20210221
+    )

@@ -109,9 +109,9 @@ def main(
     target_shapes = tf.TensorShape([None, None])
     # Training params
     batch_size = 1
-    n_epochs = 3  # 20
-    train_step_per_epochs = 10000
-    valid_step_per_epoch = 1000
+    n_epochs = 10
+    train_step_per_epochs = 2000
+    valid_step_per_epoch = 500
     validation_freq = 1
     learning_rate = 0.001
     # Files

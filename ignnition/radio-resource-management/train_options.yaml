@@ -14,8 +14,8 @@ metrics: [sum_rate_metric]
 # TRAINING OPTIONS
 batch_size: 1
 epochs: 10
-epoch_size: 1000
+epoch_size: 2000
 shuffle_training_set: False
 shuffle_validation_set: False
-val_samples: 100
+val_samples: 500
 val_frequency: 1
