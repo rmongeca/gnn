@@ -71,9 +71,11 @@ def process_history(run, model_label, metrics):
         if model_label == "gnn"
         else process_ignnition_history(run, metrics)
     )
-    columns = [metric for _, metric in metrics] + ["epoch"]
+    epoch_col = [list(range(1, len(stat[0]) + 1))]
+    run_col = [[int(run.name.split("_")[-1].replace("-", ""))]*len(stat[0])]
+    columns = [metric for _, metric in metrics] + ["epoch", "run"]
     return pd.DataFrame(
-        np.transpose(stat + [list(range(1, len(stat[0]) + 1))]), columns=columns
+        np.transpose(stat + epoch_col + run_col), columns=columns,
     )
 
 
@@ -134,6 +136,7 @@ def ecdf_plots(
     stats_gnn = stats_gnn[stats_gnn["epoch"] == stats_gnn["epoch"].max()]
     stats_ign = stats["iGNNition"]
     stats_ign = stats_ign[stats_ign["epoch"] == stats_ign["epoch"].max()]
+    figures = []
     for name, metric in metrics:
         ecdf_gnn = ECDF(stats_gnn[metric].values)
         ecdf_ignnition = ECDF(stats_ign[metric].values)
@@ -161,7 +164,10 @@ def ecdf_plots(
         plt.legend()
         plt.xlabel(name)
         plt.ylabel("Probability")
+        plt.tight_layout()
         plt.savefig(output_dir / f"{model}_{name}.png", facecolor=fig.get_facecolor())
+        figures.append(fig)
+    return figures
 
 
 def epoch_plots(
@@ -184,55 +190,60 @@ def epoch_plots(
         polyorder=polyorder,
     )
     mean_gnn = stats["GNN TF2"].groupby("epoch").mean().reset_index()
-    std_gnn = stats["GNN TF2"].groupby("epoch").std().reset_index()
+    sem_gnn = stats["GNN TF2"].groupby("epoch").sem().reset_index()
     mean_ign = stats["iGNNition"].groupby("epoch").mean().reset_index()
-    std_ign = stats["iGNNition"].groupby("epoch").std().reset_index()
+    sem_ign = stats["iGNNition"].groupby("epoch").sem().reset_index()
+    figures = []
     for name, metric in metrics:
         fig = plt.figure(figsize=(10, 8), dpi=300, facecolor="white")
+        x_gnn, y_gnn = (
+            smooth_partial(mean_gnn["epoch"], mean_gnn[metric])
+            if smooth
+            else (mean_gnn["epoch"], mean_gnn[metric])
+        )
+        x_ign, y_ign = (
+            smooth_partial(mean_ign["epoch"], mean_ign[metric])
+            if smooth
+            else (mean_ign["epoch"], mean_ign[metric])
+        )
+        plt.plot(
+            x_gnn,
+            y_gnn,
+            "k-",
+            label="GNN TF2",
+        )
+        plt.plot(
+            x_ign,
+            y_ign,
+            "k--",
+            label="iGNNition",
+        )
         if error_bars:
+            size = sem_gnn[metric].shape[0]
+            idx = np.linspace(0, x_gnn.shape[0] - 1, num=size, dtype=int)
             plt.errorbar(
-                mean_gnn["epoch"],
-                mean_gnn[metric],
-                fmt="k-",
-                yerr=std_gnn[metric],
-                label="GNN TF2",
+                x_gnn[idx],
+                y_gnn[idx],
+                color="black",
+                fmt="none",
+                yerr=sem_gnn[metric],
             )
             plt.errorbar(
-                mean_ign["epoch"],
-                mean_ign[metric],
-                fmt="k--",
-                yerr=std_ign[metric],
-                label="iGNNition",
-            )
-        else:
-            x_gnn, y_gnn = (
-                smooth_partial(mean_gnn["epoch"], mean_gnn[metric])
-                if smooth
-                else (mean_gnn["epoch"], mean_gnn[metric])
-            )
-            x_ign, y_ign = (
-                smooth_partial(mean_ign["epoch"], mean_ign[metric])
-                if smooth
-                else (mean_ign["epoch"], mean_ign[metric])
-            )
-            plt.plot(
-                x_gnn,
-                y_gnn,
-                "k-",
-                label="GNN TF2",
-            )
-            plt.plot(
-                x_ign,
-                y_ign,
-                "k--",
-                label="iGNNition",
+                x_ign[idx],
+                y_ign[idx],
+                color="black",
+                fmt="none",
+                yerr=sem_ign[metric],
             )
         plt.legend()
         plt.xlabel("Epoch")
         plt.ylabel(name)
+        plt.tight_layout()
         plt.savefig(
             output_dir / f"{model}_{name}_epoch.png", facecolor=fig.get_facecolor()
         )
+        figures.append(fig)
+    return figures
 
 
 def time_plots(model, log_dir, output_dir):
@@ -255,7 +266,9 @@ def time_plots(model, log_dir, output_dir):
         )
     )
     plt.ylabel("Time / sample (ms)")
+    plt.tight_layout()
     plt.savefig(output_dir / f"{model}_time.png", facecolor=fig.get_facecolor())
+    return fig
 
 
 def main(model, metrics, model_labels=None, output_dir=Path("plots")):
@@ -263,7 +276,7 @@ def main(model, metrics, model_labels=None, output_dir=Path("plots")):
         model_labels = _model_labels
     print(f"Plotting {model} model metrics.")
 
-    log_dir = Path(f"ignnition/{model}/logs")
+    log_dir = Path(f"ignnition/{model}/small_logs")
     log_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -274,7 +287,7 @@ def main(model, metrics, model_labels=None, output_dir=Path("plots")):
     print("Stats extracted, making plots...")
 
     ecdf_plots(model, stats, metrics, output_dir, smooth=True)
-    epoch_plots(model, stats, metrics, output_dir, error_bars=False, smooth=True)
+    epoch_plots(model, stats, metrics, output_dir, error_bars=True, smooth=True)
     time_plots(model, log_dir, output_dir)
 
 
