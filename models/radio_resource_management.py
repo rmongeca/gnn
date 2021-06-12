@@ -16,7 +16,7 @@ noise_power = tf.constant(6.294627058970857e-15)
 
 @tf.function()
 def compute_sum_rate(power, loss, weights, N):
-    """Compute Sum Rate from power allocation and channle loss matrix."""
+    """Compute Sum Rate from power allocation and channel loss matrix."""
     batch_shape = tf.shape(power)[:1]
     # Prepare power tensor
     power_tiled = tf.tile(power, [1, N, 1])
@@ -110,10 +110,10 @@ def main(
     # Training params
     batch_size = 1
     n_epochs = 10
-    train_step_per_epochs = 2000
-    valid_step_per_epoch = 500
+    train_step_per_epochs = 1000
+    valid_step_per_epoch = 100
     validation_freq = 1
-    learning_rate = 0.001
+    learning_rate = 1.0e-5
     # Files
     training_fn = list(Path(training_dir).glob("*.json"))
     validation_fn = list(Path(validation_dir).glob("*.json"))
@@ -177,9 +177,11 @@ def main(
 
 if __name__ == "__main__":
     # Paths
-    training_dir = Path("data/radio-resource-management/train")
-    validation_dir = Path("data/radio-resource-management/validation")
-    log_dir = Path("logs")
+    workspace_root = Path(__file__).parent.parent.absolute()
+    model_path = workspace_root / Path("ignnition/radio-resource-management")
+    training_dir = model_path / Path("data/train")
+    validation_dir = model_path / Path("data/validation")
+    log_dir = model_path / Path("logs")
     main(
         log_dir=log_dir,
         training_dir=training_dir,

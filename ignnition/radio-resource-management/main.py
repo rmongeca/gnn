@@ -7,7 +7,7 @@ noise_power = tf.constant(6.294627058970857e-15)
 
 @tf.function()
 def compute_sum_rate(power, loss, weights, N):
-    """Compute Sum Rate from power allocation and channle loss matrix."""
+    """Compute Sum Rate from power allocation and channel loss matrix."""
     # Prepare power tensor
     power_tiled = tf.tile(power, [N, 1])
     rx_power = tf.math.square(tf.multiply(loss, power_tiled))

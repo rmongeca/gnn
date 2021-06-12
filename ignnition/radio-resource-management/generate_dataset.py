@@ -23,15 +23,15 @@ random_seed = 20210517
 root_path = Path(__file__).parent
 raw_dir = root_path / Path("data/raw")
 train_dir = root_path / Path("data/train")
-train_samples = 2000
+train_samples = 1000
 validation_dir = root_path / Path("data/validation")
-validation_samples = 500
+validation_samples = 100
 # Computed
 total_samples = train_samples + validation_samples
 rng = np.random.default_rng(seed=random_seed)
 
 # Dataset options, please see the referenced papers for more details
-n_links = 50
+n_links = 20
 field_length = 1000
 shortest_directLink_length = 2
 longest_directLink_length = 65
@@ -52,6 +52,8 @@ Rbp = 4 * tx_height * rx_height / signal_lambda
 Lbp = abs(
     20 * np.log10(np.power(signal_lambda, 2) / (8 * np.pi * tx_height * rx_height))
 )
+# Max distance threshold for two pairs to affect each other, preventing edges between them
+# distance_threshold = 200
 
 
 def _empty_dirs(dirs=None):
@@ -156,6 +158,7 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
         diag_dist = np.diag(dist_inv)
         diag_channel_loss = np.diag(channel_loss_sqrt)
         adjacency = dist_inv - np.multiply(np.eye(N), dist_inv)  # Remove own pair
+        # adjacency[dist > distance_threshold] = 0  # Remove influence of far pairs
         weights = rng.uniform(size=N)  # Transceiver-receiver random weights
         weights = weights / weights.sum()  # Normalize weights
         wmmse_power = get_wmmse_power(channel_loss_sqrt, weights, noise_power)
@@ -187,7 +190,7 @@ def generate_graphs(output_dir="data/raw", output_prefix="network", empty_dirs=F
             [
                 (src, dst, {"transceiver_receiver_loss": adjacency[src, dst]})
                 for src, dst in product(range(N), range(N))
-                if src != dst
+                if src != dst and adjacency[src, dst]
             ]
         )
         graph.graph["noise_power"] = noise_power
