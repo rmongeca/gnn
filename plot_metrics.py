@@ -276,7 +276,7 @@ def main(model, metrics, model_labels=None, output_dir=Path("plots")):
         model_labels = _model_labels
     print(f"Plotting {model} model metrics.")
 
-    log_dir = Path(f"ignnition/{model}/small_logs")
+    log_dir = Path(f"ignnition/{model}/logs")
     log_dir.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
 

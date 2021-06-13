@@ -126,7 +126,7 @@ def main(
         "aggregation_fn": tf.math.reduce_max,
         "activation": "relu",
         "layer": tf.keras.layers.Dense,
-        "num_layers": 3,
+        "num_layers": 4,
         "units": [5, 32, 32],
         "output_activation": "relu",
     }
