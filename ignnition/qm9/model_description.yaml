@@ -40,6 +40,14 @@ message_passing:
                   - $order_3
         aggregation:
           - type: sum
+            output_name: sum_value
+          - type: max
+            output_name: max_value
+          - type: min
+            output_name: min_value
+          - type: neural_network
+            input: [sum_value, max_value, min_value]
+            nn_name: aggregation_function
         update:
           type: neural_network
           nn_name: update_function
@@ -81,9 +89,20 @@ neural_networks:
   - type_layer: nn_layer
     units: hidden_state_dimension
 
+- nn_name: aggregation_function
+  nn_architecture:
+  - type_layer: nn_layer
+    activation: nn_activation
+    units: nn_units
+  - type_layer: nn_layer
+    activation: nn_activation
+    units: nn_units
+  - type_layer: nn_layer
+    units: hidden_state_dimension
+
 - nn_name: update_function
   nn_architecture:
-    - type_layer: GRU
+  - type_layer: GRU
 
 - nn_name: readout_gate
   nn_architecture:

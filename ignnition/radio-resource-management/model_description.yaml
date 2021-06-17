@@ -28,7 +28,15 @@ message_passing:
                   - destination
                   - $transceiver_receiver_loss
         aggregation:
+          - type: sum
+            output_name: sum_value
           - type: max
+            output_name: max_value
+          - type: min
+            output_name: min_value
+          - type: neural_network
+            input: [sum_value, max_value, min_value]
+            nn_name: aggregation_function
         update:
           type: neural_network
           nn_name: update_function
@@ -46,6 +54,7 @@ neural_networks:
     axis: -1
     center: true
     scale: true
+
 - nn_name: message_function
   nn_architecture:
   - type_layer: nn_layer
@@ -59,6 +68,17 @@ neural_networks:
     units: 32
   - type_layer: nn_layer
     activation: nn_activation
+    units: hidden_state_dimension
+
+- nn_name: aggregation_function
+  nn_architecture:
+  - type_layer: nn_layer
+    activation: nn_activation
+    units: 32
+  - type_layer: nn_layer
+    activation: nn_activation
+    units: 32
+  - type_layer: nn_layer
     units: hidden_state_dimension
 
 - nn_name: update_function

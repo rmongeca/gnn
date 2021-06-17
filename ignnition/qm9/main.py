@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 def main():
-    model = ignnition.create_model(model_dir=Path(__file__).absolute())
-    # model.computational_graph()
+    model = ignnition.create_model(model_dir=Path(__file__).parent.absolute())
+    model.computational_graph()
     model.train_and_validate()
     # model.prdict()
 

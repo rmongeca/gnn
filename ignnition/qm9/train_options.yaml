@@ -16,9 +16,9 @@ metrics: [MeanAbsoluteError]
 
 # TRAINING OPTIONS
 batch_size: 1
-epochs: 20
-epoch_size: 10000
+epochs: 10
+epoch_size: 1000
 shuffle_training_set: False
 shuffle_validation_set: False
-val_samples: 1000
+val_samples: 100
 val_frequency: 1
